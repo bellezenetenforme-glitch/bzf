@@ -1,8 +1,6 @@
-import { Resend } from 'resend';
-
 /* ------------------------------------------------------------------
    Netlify Function — reçoit les réponses du questionnaire BZF
-   et les envoie par email via l'API Resend.
+   et les envoie par email via l'API REST Resend (fetch).
    Endpoint déployé : /.netlify/functions/contact
    Config : voir variables d'environnement dans netlify.toml / le dashboard.
 ------------------------------------------------------------------ */
@@ -73,19 +71,20 @@ export const handler = async (event) => {
     `</div>`;
 
   try {
-    const resend = new Resend(RESEND_API_KEY);
-    const { data, error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [TO_EMAIL],
-      subject,
-      text,
-      html,
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: FROM_EMAIL, to: [TO_EMAIL], subject, text, html }),
     });
-    if (error) {
-      console.error('Resend error :', error);
-      return json(null, 502, { success: false, error: error.message || 'Échec Resend.' });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error('Resend error :', JSON.stringify(result));
+      return json(null, response.status, { success: false, error: result.message || 'Échec Resend.' });
     }
-    return json(null, 200, { success: true, id: data?.id });
+    return json(null, 200, { success: true, id: result?.id });
   } catch (e) {
     console.error('Erreur fonction contact :', e);
     return json(null, 500, { success: false, error: e.message || 'Erreur serveur.' });
