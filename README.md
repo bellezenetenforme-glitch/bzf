@@ -67,13 +67,26 @@ Le sélecteur de langue navigue vers la bonne URL. Hors build (si tu sers
 
 ### Ce que le build ne prerend pas
 
-Les cartes produits et le quiz sont générés par `renderQuiz()` et
-`renderNeeds()` à partir de `CATEGORIES`, qui embarque **609 Ko d'images en
-base64**. Les prerendre triplerait ce poids dans le HTML généré ; ils restent
-donc rendus côté client. Google exécute le JS, donc l'indexation n'en souffre
-pas — mais un scraper social qui n'exécute pas de JS ne les verra pas dans le
-HTML. C'est le compromis à défaire quand les images seront extraites en
-fichiers.
+Les 19 produits et le quiz sont générés par `renderQuiz()` et `renderNeeds()` à
+l'exécution : le HTML ne contient que les coquilles `<main id="needContainer">`
+et `<div id="quizGrid">`, vides.
+
+**Ce n'est plus un blocage technique.** Les images étant désormais des fichiers
+dans `dist/img/` (`commit a4c4656`), un pré-rendu ne coûterait plus de poids :
+il suffirait de scinder `renderNeeds()` en une fonction pure qui renvoie la
+chaîne HTML, et une fonction qui branche les événements. C'est reporté, pas
+écarté.
+
+Ce qui reste vrai, et qui limite l'intérêt de la chose :
+
+- **Google** exécute le JS et indexe déjà les 21 produits aujourd'hui ;
+- **les scrapers sociaux** (WhatsApp, Instagram, Facebook) n'exécutent pas de
+  JS, mais ils n'ont jamais utilisé le corps de la page : ils lisent
+  `og:title`, `og:description` et `og:image`, tous trois déjà en place.
+
+Le seul lecteur réellement servi serait un crawler textuel ou un assistant IA,
+qui n'extrait aujourd'hui qu'un HTML vide sous les titres. Rapport effort/risque
+défavorable sur le cœur commercial du site — d'où le report.
 
 Le build vérifie qu'il ne reste aucun élément i18n vide et échoue avec un code
 de sortie 1 sinon.
