@@ -48,16 +48,16 @@ const OG = {
 // Titres et descriptions par langue, pour la recherche et les liens.
 const SEO = {
   fr: {
-    title: 'BZF — Belle, zen et en forme | Conseil FitLine personnalisé',
-    desc: 'Steff, partenaire indépendante FitLine, compose avec toi une routine de produits adaptée à ton objectif : énergie, sommeil, glow ou forme. Réponds en 2 minutes.',
+    title: 'BZF — Nutrition et bien-être | Conseil FitLine personnalisé',
+    desc: 'Steff, partenaire indépendante, te conseille en nutrition et bien-être : une routine de produits adaptée à ton objectif. Réponds en 2 minutes.',
   },
   en: {
-    title: 'BZF — Beautiful, calm and in shape | FitLine advice',
-    desc: 'Steff, an independent FitLine partner, builds a routine matched to your goal: energy, sleep, glow or shape. Fill in the 2-minute questionnaire.',
+    title: 'BZF — Nutrition and wellness | Personalised FitLine advice',
+    desc: 'Steff, an independent FitLine partner, guides you on nutrition and wellness with a routine matched to your goal. Take the 2-minute quiz.',
   },
   es: {
-    title: 'BZF — Bella, zen y en forma | Consejo personalizado FitLine',
-    desc: 'Steff, partner independiente de FitLine, te recomienda una rutina según tu objetivo: energía, sueño, glow o figura. Rellena el cuestionario en 2 minutos.',
+    title: 'BZF — Nutrición y bienestar | Consejo FitLine a medida',
+    desc: 'Steff, partner independiente de FitLine, te guía en nutrición y bienestar con una rutina según tu objetivo. Rellena el cuestionario en 2 minutos.',
   },
 };
 

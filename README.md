@@ -164,8 +164,20 @@ déjà : ils passent par `shopUrl(c.shop)`, de vrais liens FitLine.
 plus de 65 caractères, une description de plus de 160, ou un texte français
 sans accent — c'est du contenu affiché par Google, pas du code.
 
-Les trois langues sont là : `/`, `/en/`, `/es/`. Les textes sont à relire si
-ton positionnement change, dans `SEO` en haut de `build.mjs`.
+Les trois langues sont là : `/`, `/en/`, `/es/`, et le terme cible est présent
+dans les trois : *nutrition* et *bien-être* en français, *nutrition and wellness*
+en anglais, *nutrición y bienestar* en espagnol. Les textes sont dans `SEO` en
+haut de `build.mjs`, et un test échoue si le terme cible disparaît d'une langue.
+
+Le build refuse aussi un titre de plus de 65 caractères, une description de plus
+de 160, ou un texte français sans accent.
+
+Ces deux termes sont des **têtes de marché** très concurrentielles : une vitrine
+de partenaire locale ne se positionnera pas dessus. Ils apportent la pertinence,
+pas le trafic. Le trafic viendra du local (nom de la ville, « près de chez
+moi ») et des intentions longues que les clientes tapent réellement — un
+complément pour le sommeil, une routine fatigue, un avis sur un produit précis.
+Si tu me donnes ta zone géographique, j'ajoute le qualificatif local.
 
 ## Anti-spam
 

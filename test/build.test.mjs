@@ -42,16 +42,25 @@ test('le build a produit les 3 pages', () => {
 
 test('chaque page a un head localise et unique', () => {
   const seen = new Set();
+  const titles = [];
   for (const [rel, lang] of [['index.html', 'fr'], ['en/index.html', 'en'], ['es/index.html', 'es']]) {
     const p = page(rel);
     assert.match(p, new RegExp(`<html lang="${lang}">`), `${rel} : <html lang> incorrect`);
-    assert.match(p, new RegExp(`<title>[^<]*${lang === 'fr' ? 'Belle' : lang === 'en' ? 'Beautiful' : 'Bella'}`));
+    // Le terme cible doit etre present dans les trois langues : c'est la
+    // garantie qu'on cherche, pas un mot de marque fige dans un test.
+    const keyword = { fr: 'nutrition', en: 'nutrition', es: 'nutrición' }[lang];
+    const title = /<title>([^<]*)<\/title>/.exec(p)[1];
+    const desc = /<meta name="description" content="([^"]*)"/.exec(p)[1];
+    assert.match(title.toLowerCase(), new RegExp(keyword), `${rel} : "${keyword}" absent du titre`);
+    assert.match(desc.toLowerCase(), new RegExp(keyword), `${rel} : "${keyword}" absent de la description`);
+    titles.push(title);
     assert.match(p, new RegExp(`__BZF_LANG__="${lang}"`));
     const canonical = /rel="canonical" href="([^"]+)"/.exec(p)[1];
     assert.ok(canonical.endsWith(lang === 'fr' ? '/' : `/${lang}/`), `${rel} : canonical ${canonical}`);
     seen.add(canonical);
   }
   assert.equal(seen.size, 3, 'les 3 canonical doivent differer');
+  assert.equal(new Set(titles).size, 3, 'les 3 titres doivent differer');
 });
 
 test('les hreflang sont reciproques sur les 3 pages', () => {
