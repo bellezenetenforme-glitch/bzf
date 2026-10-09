@@ -171,8 +171,27 @@ Deux causes possibles, dans cet ordre :
 2. Ton origine n'est pas dans la liste `ALLOWED_ORIGINS` → la requête est
    rejetée **en silence** (voir la section anti-spam plus bas).
 
-Le fallback du front : si l'envoi échoue, le site propose un `mailto:` pré-rempli
-avec toutes les réponses afin que rien ne soit perdu.
+### Le secours : pourquoi un `mailto:` alors que l'email n'est plus proposé
+
+Quand l'envoi technique échoue, le site propose un `mailto:` **pré-rempli avec
+le sujet et toutes les réponses**.
+
+C'est délibéré, et ce n'est pas une incohérence avec le retrait de l'email parmi
+les canaux du formulaire :
+
+- le formulaire demande à la cliente **comment elle préfère être recontactée** ;
+- le secours utilise **la boîte de Steff** pour recevoir le lead.
+
+Les deux couches sont différentes. Retirer l'email de la question ne change pas
+le fait que Steff lit sa boîte aux lettres.
+
+Un lien Messenger ne conviendrait pas : il ne transporte rien, et Steff devrait
+redemander le questionnaire à la cliente. Remplacer le `mailto:` ferait perdre
+précisément ce que le secours existe pour sauver.
+
+L'écran d'erreur explique ce qu'il va se passer — les réponses sont déjà
+écrites, il ne reste qu'à envoyer — parce que sur mobile, un `mailto:` peut
+n'apparaître dans rien si aucune application mail n'est configurée.
 
 ## Ce que le formulaire ne devine pas
 
