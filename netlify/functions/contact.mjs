@@ -9,6 +9,52 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = process.env.TO_EMAIL || process.env.CONTACT_EMAIL || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'BZF <onboarding@resend.dev>';
 
+/* ------------------------------------------------------------------
+   Anti-spam
+   ------------------------------------------------------------------ */
+const MAX_BODY = 20000;         // caracteres
+const MIN_FILL_MS = 2500;       // en dessous, ce n'est pas humain
+const RATE_MAX = 3;             // envois
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+
+// Origines autorisees. ALLOWED_ORIGINS remplace integralement cette liste.
+// ATTENTION : toute origine non listee est rejetee SILENCIEUSEMENT (200, aucun
+// email). Si tu as un domaine custom, ajoute-le ici ou dans ALLOWED_ORIGINS,
+// sinon les vrais clients ne recoivent rien.
+const DEFAULT_ORIGINS = [
+  'bellezenetenforme.fr', 'www.bellezenetenforme.fr',
+  'localhost', '127.0.0.1',
+  '.netlify.app', '.netlify.com',
+];
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+const ORIGINS = ALLOWED_ORIGINS.length ? ALLOWED_ORIGINS : DEFAULT_ORIGINS;
+
+/* Les compteurs vivent sur globalThis : le module est conserve entre les
+   invocations a chaud d'une meme instance, donc le quota tient un peu
+   dans le temps. Les instances sont ephemeres, ce n'est pas une garantie. */
+const store = (globalThis.__bzfRate ??= { hits: new Map() });
+
+function originAllowed(event) {
+  const h = event.headers || {};
+  const raw = (h.origin && String(h.origin).trim())
+    || (h.referer && String(h.referer).trim());
+  if (!raw) return false; // ni Origin ni Referer : ce n'est pas un navigateur
+  let host;
+  // hostname (sans port) : le port de dev ne doit pas casser la correspondance
+  try { host = new URL(raw).hostname.toLowerCase(); } catch { return false; }
+  return ORIGINS.some((o) => (o.startsWith('.') ? host.endsWith(o) : host === o || host.endsWith('.' + o)));
+}
+
+function tooManySends(ip) {
+  const now = Date.now();
+  const seen = (store.hits.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  seen.push(now);
+  store.hits.set(ip, seen);
+  if (store.hits.size > 5000) store.hits.clear(); // garde-fou memoire
+  return seen.length > RATE_MAX;
+}
+
 function escHtml(s = '') {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -42,7 +88,30 @@ export const handler = async (event) => {
     return json(null, 400, { success: false, error: 'JSON invalide.' });
   }
 
-  const { _subject, Prenom, Contact, Canal, Message } = body || {};
+  const { _subject, Prenom, Contact, Canal, Message, _hp, _t } = body || {};
+
+  const ip = String((event.headers || {})['x-nf-client-connection-ip']
+    || (event.headers || {})['x-forwarded-for'] || 'inconnu').split(',')[0].trim();
+
+  // --- Filtres anti-spam, du moins cher au plus cher ---
+  if (typeof event.body === 'string' && event.body.length > MAX_BODY) {
+    return json(null, 413, { success: false, error: 'Requete trop volumineuse.' });
+  }
+  // Un honeypot rempli, un remplissage trop rapide ou une origine hors
+  // domaine : on repond comme si tout allait bien, sans rien envoyer.
+  // Le bot n'a ainsi aucun signal pour apprendre a contourner le filtre.
+  const honey = String(_hp || '').trim();
+  const elapsed = Number(_t);
+  if (honey || !Number.isFinite(elapsed) || elapsed < MIN_FILL_MS || !originAllowed(event)) {
+    if (honey) console.warn('Anti-spam : honeypot rempli.');
+    else if (!Number.isFinite(elapsed) || elapsed < MIN_FILL_MS) console.warn('Anti-spam : remplissage trop rapide.');
+    else console.warn('Anti-spam : origine refusee.');
+    return json(null, 200, { success: true });
+  }
+
+  if (tooManySends(ip)) {
+    return json(null, 429, { success: false, error: 'Trop de demandes. Reessayez plus tard.' });
+  }
 
   if (!Message || !String(Message).trim()) {
     return json(null, 400, { success: false, error: 'Corps de message manquant.' });

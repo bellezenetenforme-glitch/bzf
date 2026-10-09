@@ -1,5 +1,10 @@
 # Backend d'envoi du questionnaire BZF
 
+> **Ce dossier n'est pas utilisé en production.** Le front appelle
+> `/.netlify/functions/contact` (voir `netlify/functions/contact.mjs`).
+> Ce serveur est conservé comme alternative si tu quittes Netlify
+> (Railway, Render, Fly.io…). Il applique les mêmes contrôles anti-spam.
+
 Petit serveur Node/Express qui reçoit les réponses du formulaire de `index.html`
 et les envoie par email à `CONTACT_EMAIL` via un transporteur SMTP (Nodemailer).
 
@@ -23,7 +28,20 @@ cp .env.example .env   # puis édite .env
   du serveur au lieu d'être réellement envoyés (aucun email part).
 - `CLIENT_ORIGIN` : `true` pour accepter toutes les origines (dev), ou une URL
   (ex: `https://bellezenetenforme.fr`) en production.
+- `ALLOWED_ORIGINS` : origines autorisées par le filtre anti-spam (séparées par
+  des virgules). Vide → défaut : `bellezenetenforme.fr`, son `www`, tout
+  `*.netlify.app`, `*.netlify.com` et `localhost`. **Toute origine absente est
+  rejetée silencieusement** (200, aucun email) : ajoute-la si tu changes de
+  domaine.
 - `PORT` : port d'écoute (4000 par défaut).
+
+## Anti-spam
+
+Mêmes filtres que la Netlify Function : body > 20 000 caractères → `413`,
+honeypot `_hp` rempli / remplissage en < 2,5 s (`_t`) / origine hors liste →
+rejet **silencieux** (`200 {"success":true}`, rien n'est envoyé), et plus de
+3 envois par heure et par IP → `429`. Contrairement à la fonction, ce serveur
+est long-running : le compteur de débit tient vraiment.
 
 ## Démarrer
 
@@ -40,16 +58,22 @@ Endpoint : `POST /api/contact` — vérif de santé : `GET /health`.
 ```bash
 curl -X POST http://localhost:4000/api/contact \
   -H 'Content-Type: application/json' \
-  -d '{"_subject":"Test","Prenom":"Marie","Contact":"06 12 34 56 78","Canal":"Email","Message":"Bonjour Steff, je veux une routine."}'
+  -H 'Origin: http://localhost:4000' \
+  -d '{"_subject":"Test","Prenom":"Marie","Contact":"06 12 34 56 78","Canal":"Email","Message":"Bonjour Steff, je veux une routine.","_t":60000}'
 ```
+
+Le header `Origin` est obligatoire : sans lui la requête est rejetée par le
+filtre anti-spam. `_t` est le temps de remplissage en ms — mets une valeur
+supérieure à 2500 pour passer le filtre.
 
 Avec `MAIL_DRY_RUN=true`, le message apparaît dans la console du serveur.
 
 ## Brancher le front
 
-Le front `index.html` appelle cet endpoint. Vérifie la constante `API_URL` dans le
-script (`const API_URL = 'http://localhost:4000/api/contact'`) et pointe-la vers
-l'URL publique de ton serveur en production.
+Le front appelle `/.netlify/functions/contact` par défaut (`API_URL` dans
+`index.html`). Pour utiliser ce serveur à la place, remplace cette constante
+par l'URL publique de ton endpoint, ex.
+`const API_URL = 'https://ton-serveur.example/api/contact';`.
 
 ## Déploiement
 
