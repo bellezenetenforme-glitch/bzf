@@ -239,6 +239,27 @@ test('le bouton Team est pilote par TEAM_LINK', () => {
   assert.match(p, /id="teamLink"[^>]*href="#team"/);
 });
 
+test('un lien vers une ancre interne n\'ouvre pas un nouvel onglet', () => {
+  const p = page('index.html');
+  const a = /<a[^>]*class="[^"]*contact-link[^"]*"[^>]*>/.exec(p);
+  assert.ok(a, 'lien contact-link introuvable');
+  assert.doesNotMatch(a[0], /target="_blank"/,
+    'target="_blank" sur une ancre interne : le site s\'ouvre dans un nouvel onglet');
+  // et le HTML doit rester bien forme : les attributs ne doivent pas avoir
+  // ete concatenes en retirant l'espace qui les separait
+  assert.match(a[0], /contact-link" data-i18n=/, 'espaces d\'attribut abimes');
+});
+
+test('les liens externes gardent target et rel', () => {
+  const p = page('index.html');
+  for (const id of ['igLink', 'fbLink', 'msLink']) {
+    const a = new RegExp(`<a[^>]*id="${id}"[^>]*>`).exec(p);
+    assert.ok(a, `${id} introuvable`);
+    assert.match(a[0], /target="_blank"/, `${id} : target="_blank" manquant`);
+    assert.match(a[0], /rel="noopener"/, `${id} : rel="noopener" manquant`);
+  }
+});
+
 test('sitemap et robots pointent vers le bon domaine', () => {
   assert.match(page('sitemap.xml'), /<loc>https:\/\/bellezenetenforme\.fr\/<\/loc>/);
   assert.match(page('robots.txt'), /Sitemap: https:\/\/bellezenetenforme\.fr\/sitemap\.xml/);

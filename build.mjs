@@ -477,6 +477,18 @@ for (const lang of LANGS) {
   // Les chemins d'images sont relatifs au document : sur /en/ et /es/ il
   // faut remonter d'un cran, comme pour le favicon.
   page = page.split(IMG_TOKEN).join(lang === 'fr' ? 'img/' : '../img/');
+
+  // target="_blank" sur une ancre interne ouvre le site dans un nouvel onglet
+  // au lieu de defiler jusqu'a la section. Les deux elements concernes sont
+  // donc nettoyes au build quand leur constante est une ancre.
+  for (const [constName, id] of [['CONTACT_LINK', 'contact-link'], ['PROMO_LINK', 'promoCode2']]) {
+    const v = (new RegExp('const ' + constName + '\\s*=\\s*"([^"]*)"').exec(stripped.text) || [, ''])[1];
+    if (!v.startsWith('#') || v === '#') continue;
+    const re = new RegExp('(<a[^>]*class="[^"]*' + id + '[^"]*"[^>]*)');
+    page = page.replace(re, (m, head) => head
+      .replace(/\s*target="_blank"/g, '')
+      .replace(/\s*rel="noopener"/g, ''));
+  }
   if (lang !== 'fr') page = page.replace(/href="favicon\.png"/g, 'href="../favicon.png"');
 
   // Toute image citee, quel que soit son chemin, doit exister sur le disque.
