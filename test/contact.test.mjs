@@ -34,8 +34,8 @@ const valid = (extra = {}) => ({
   Message: 'Bonjour', _t: 60000, ...extra,
 });
 
-const status = async (event) => (await handler(event)).status;
-const body = async (event) => await (await handler(event)).json();
+const status = async (event) => (await handler(event)).statusCode;
+const body = async (event) => JSON.parse((await handler(event)).body);
 
 /* 503 : la requete a franchi les filtres, elle s'arrete sur l'absence de cle. */
 const CONFIGURE = 503;
@@ -60,8 +60,8 @@ test('refuse un JSON invalide', async () => {
 
 test('honeypot rempli : 200 sans envoi', async () => {
   const r = await handler(ev({ body: valid({ _hp: 'http://spam.example' }) }));
-  assert.equal(r.status, 200);
-  assert.deepEqual(await r.json(), { success: true });
+  assert.equal(r.statusCode, 200);
+  assert.deepEqual(JSON.parse(r.body), { success: true });
 });
 
 test('honeypot compose d espaces : tolere', async () => {
@@ -158,8 +158,8 @@ test('sans FROM_EMAIL : 503 explicite, aucun envoi silencieux', async () => {
   const m = await import('../netlify/functions/contact.mjs?from=absent');
 
   const r = await m.handler(ev({ body: valid() }));
-  assert.equal(r.status, 503);
-  assert.match((await r.json()).error, /FROM_EMAIL/);
+  assert.equal(r.statusCode, 503);
+  assert.match(JSON.parse(r.body).error, /FROM_EMAIL/);
 });
 
 test('avec FROM_EMAIL : la requete va bien au bout', async () => {
@@ -171,8 +171,26 @@ test('avec FROM_EMAIL : la requete va bien au bout', async () => {
   const r = await m.handler(ev({ body: valid() }));
   // Cle factice : Resend repond 401. L'important est que la requete ne soit
   // pas bloquee par la configuration, et surtout pas par un repli silencieux.
-  assert.notEqual(r.status, 503);
-  assert.doesNotMatch(await r.text(), /FROM_EMAIL manquant/);
+  assert.notEqual(r.statusCode, 503);
+  assert.doesNotMatch(r.body, /FROM_EMAIL manquant/);
+});
+
+/* ---------- contrat de reponse ---------- 
+
+   Le handler est un handler v1 (`export const handler = async (event)`), donc
+   il doit renvoyer la forme { statusCode, headers, body }. Renvoyer une
+   Response Web fonctionne quand on appelle le handler directement, mais le
+   runtime Netlify doit traduire la valeur de retour en reponse lambda : si
+   cette traduction echoue, le client recoit un 502 "invalid status code
+   returned from lambda: 0" alors que la fonction s'est bien executee. */
+
+test('le handler renvoie la forme v1, pas une Response Web', async () => {
+  const r = await handler(ev({ body: valid() }));
+  assert.equal(r instanceof Response, false,
+    'le handler renvoie une Response Web : le runtime Netlify ne peut pas la serialiser');
+  assert.equal(typeof r.statusCode, 'number');
+  assert.equal(typeof r.body, 'string');
+  assert.equal(r.headers['Content-Type'], 'application/json');
 });
 
 test('le code ne doit pas retomber sur onboarding@resend.dev', async () => {

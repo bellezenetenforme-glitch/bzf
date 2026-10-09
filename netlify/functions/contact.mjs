@@ -68,10 +68,11 @@ function escHtml(s = '') {
 }
 
 function json(res, status, body) {
-  return new Response(JSON.stringify(body), {
-    status,
+  return {
+    statusCode: status,
     headers: { 'Content-Type': 'application/json' },
-  });
+    body: JSON.stringify(body),
+  };
 }
 
 function readBody(ev) {
