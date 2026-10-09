@@ -12,17 +12,35 @@ via une **Netlify Function** (serverless) utilisant l'API **Resend**.
   partage rende pareil sur n'importe quelle machine.
 - `netlify/functions/contact.mjs` — Netlify Function : reçoit `POST` et envoie
   l'email via l'API REST Resend (`fetch`, aucun SDK à bundler).
-- `server/` — *(optionnel)* backend Express/Nodemailer alternatif pour du dev local
-  ou une autre plateforme. Non requis pour Netlify.
 
-## Construire
+## Construire et vérifier
 
 ```bash
-npm install     # une seule dépendance : @resvg/resvg-js
-npm run build   # -> dist/
+npm install         # une seule dépendance : @resvg/resvg-js
+npm test            # 19 tests de la fonction de contact
+npm run build       # -> dist/
+npm run check:config  # vérifie que les emails partiront vraiment
+npm run dev         # netlify dev
 ```
 
 `dist/` n'est pas commité, il est produit par Netlify à chaque déploiement.
+
+### `npm run check:config`
+
+Le contrôle qui compte avant un déploiement. Il lit l'environnement (et `.env`
+en local) et signale ce qui empêcherait les emails d'arriver. Il a notamment un
+cas particulier pour `onboarding@resend.dev`, qui répond 200 sans rien livrer :
+sans ce contrôle, on ne s'en aperçoit qu'en perdant un client.
+
+Il sort en code 1 si un envoi email serait cassé, en code 0 sinon.
+
+### `npm test`
+
+19 tests qui chargent le handler sans réseau : `RESEND_API_KEY` est vide, donc
+une requête qui franchit tous les filtres s'arrête sur un 503 — ce qui prouve
+qu'elle a atteint l'étape Resend. Ils couvrent le honeypot, le temps de
+remplissage, le contrôle d'origine, le rate limit, et l'absence de repli sur le
+domaine de test.
 
 ## Les pages et les langues
 
@@ -123,6 +141,22 @@ Deux causes possibles, dans cet ordre :
 
 Le fallback du front : si l'envoi échoue, le site propose un `mailto:` pré-rempli
 avec toutes les réponses afin que rien ne soit perdu.
+
+## Liens de vente à renseigner
+
+Quatre constantes en haut du script de `src/index.html` (ligne ~857) sont encore
+à `#` ou vides. Tant qu'elles le sont, `npm run build` le signale et
+`npm run check:config` les liste.
+
+| Constante | Effet si laissée à `#` |
+| --- | --- |
+| `CONTACT_LINK` | le CTA principal bascule sur le `mailto:` de secours |
+| `PROMO_LINK` | le lien du code promo ne mène nulle part |
+| `TEAM_LINK` | « Rejoindre la Team » bascule sur le `mailto:` de candidature |
+| `PROMO_CODE` | le bloc de code promo est masqué |
+
+Les boutons « Commande maintenant » des sections produits, eux, fonctionnent
+déjà : ils passent par `shopUrl(c.shop)`, de vrais liens FitLine.
 
 ## Titres et descriptions SEO
 

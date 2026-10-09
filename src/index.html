@@ -725,39 +725,39 @@
         <input type="text" id="hpCheck" name="_hp" tabindex="-1" autocomplete="off">
       </div>
       <div class="field-row">
-        <div class="field"><label data-i18n="f_name"></label><input type="text" name="prenom" data-i18n-ph="f_name_ph" required></div>
-        <div class="field"><label data-i18n="f_age"></label><input type="number" name="age" min="10" max="99" data-i18n-ph="f_age_ph"></div>
+        <div class="field"><label for="fPrenom" data-i18n="f_name"></label><input type="text" id="fPrenom" name="prenom" data-i18n-ph="f_name_ph" required></div>
+        <div class="field"><label for="fAge" data-i18n="f_age"></label><input type="number" id="fAge" name="age" min="10" max="99" data-i18n-ph="f_age_ph"></div>
       </div>
 
-      <div class="field"><label data-i18n="f_goal"></label>
-        <div class="chips" id="goalChips" data-i18n-chips="goal_opts"></div></div>
+      <div class="field"><label id="lblf_goal" data-i18n="f_goal"></label>
+        <div class="chips" id="goalChips" role="group" aria-labelledby="lblf_goal" data-i18n-chips="goal_opts"></div></div>
 
-      <div class="field"><label data-i18n="f_activity"></label>
+      <div class="field"><label for="activiteSel" data-i18n="f_activity"></label>
         <select name="activite" id="activiteSel" data-i18n-opts="sport_opts"></select></div>
 
-      <div class="field" id="activiteWrap" hidden><label data-i18n="f_activity_which"></label>
-        <input type="text" name="activite_type" data-i18n-ph="act_which_ph"></div>
+      <div class="field" id="activiteWrap" hidden><label for="fActiviteWhich" data-i18n="f_activity_which"></label>
+        <input type="text" id="fActiviteWhich" name="activite_type" data-i18n-ph="act_which_ph"></div>
 
-      <div class="field"><label data-i18n="f_moment"></label>
-        <div class="chips" id="momentChips" data-i18n-chips="moment_opts"></div></div>
+      <div class="field"><label id="lblf_moment" data-i18n="f_moment"></label>
+        <div class="chips" id="momentChips" role="group" aria-labelledby="lblf_moment" data-i18n-chips="moment_opts"></div></div>
 
-      <div class="field"><label data-i18n="f_needs"></label>
-        <div class="chips chips-needs" id="needChips" data-i18n-chips="needs_opts"></div></div>
+      <div class="field"><label id="lblf_needs" data-i18n="f_needs"></label>
+        <div class="chips chips-needs" id="needChips" role="group" aria-labelledby="lblf_needs" data-i18n-chips="needs_opts"></div></div>
 
-      <div class="field"><label data-i18n="f_diet"></label>
-        <select name="alimentation" data-i18n-opts="diet_opts"></select></div>
+      <div class="field"><label for="fAlimentation" data-i18n="f_diet"></label>
+        <select id="fAlimentation" name="alimentation" data-i18n-opts="diet_opts"></select></div>
 
-      <div class="field"><label data-i18n="f_health"></label>
-        <textarea name="signalements" data-i18n-ph="f_health_ph"></textarea></div>
+      <div class="field"><label for="fSignalements" data-i18n="f_health"></label>
+        <textarea id="fSignalements" name="signalements" data-i18n-ph="f_health_ph"></textarea></div>
 
       <div class="field-row">
-        <div class="field"><label data-i18n="f_supp"></label><select name="complements" data-i18n-opts="supp_opts"></select></div>
-        <div class="field"><label data-i18n="f_budget"></label><select name="budget" data-i18n-opts="budget_opts"></select></div>
+        <div class="field"><label for="fComplements" data-i18n="f_supp"></label><select id="fComplements" name="complements" data-i18n-opts="supp_opts"></select></div>
+        <div class="field"><label for="fBudget" data-i18n="f_budget"></label><select id="fBudget" name="budget" data-i18n-opts="budget_opts"></select></div>
       </div>
 
       <div class="field-row">
-        <div class="field"><label data-i18n="f_channel"></label><select name="canal" data-i18n-opts="channel_opts"></select></div>
-        <div class="field"><label data-i18n="f_contact"></label><input type="text" name="contact" data-i18n-ph="f_contact_ph" required></div>
+        <div class="field"><label for="fCanal" data-i18n="f_channel"></label><select id="fCanal" name="canal" data-i18n-opts="channel_opts"></select></div>
+        <div class="field"><label for="fContact" data-i18n="f_contact"></label><input type="text" id="fContact" name="contact" data-i18n-ph="f_contact_ph" required></div>
       </div>
 
       <button type="submit" class="btn btn-primary form-submit magnetic" id="formSubmitBtn"><span data-i18n="form_submit"></span></button>

@@ -386,8 +386,42 @@ for (const [name, buf] of stripped.files) writeFileSync(join(OUT, 'img', name), 
 // Le hero est un chemin relatif : depuis /en/ et /es/ il faut remonter d'un cran.
 const heroFor = (lang) => (lang === 'fr' ? '' : '../') + 'img/' + stripped.hero;
 
+/* Liens de vente encore a "#" : ce sont des boutons morts en production.
+   On ne peut pas les remplir a la place du proprietaire, mais on refuse de
+   publier sans le dire. Avertissement et non erreur : le site doit rester
+   deployable pendant que les liens sont renseignes. */
+const PLACEHOLDERS = ['CONTACT_LINK', 'PROMO_LINK', 'TEAM_LINK', 'PROMO_CODE'];
+function checkPlaceholders() {
+  const warn = [];
+  for (const name of PLACEHOLDERS) {
+    const m = new RegExp('const ' + name + '\\s*=\\s*"([^"]*)"').exec(src);
+    if (!m) { warn.push(`${name} : declaration introuvable`); continue; }
+    // "#" est le placeholder : un lien pointant la dessus est un bouton mort.
+    if (!m[1] || m[1] === '#') warn.push(`${name} est encore a "#" ou vide`);
+  }
+  return warn;
+}
+
+/* L'email de contact existe a deux endroits : en dur dans le front (pour les
+   liens mailto), et dans les variables d'environnement (pour la fonction).
+   Le front ne peut pas lire une variable d'environnement, on ne peut donc
+   pas dedoublonner. On empeche en revanche qu'ils divergent en silence : le
+   site enverrait les leads a une adresse differente de celle du mailto. */
+function checkContactEmail() {
+  const m = /const CONTACT_EMAIL\s*=\s*"([^"]*)"/.exec(src);
+  if (!m) return ['CONTACT_EMAIL introuvable dans src/index.html'];
+  const inPage = m[1].trim();
+  if (!inPage) return ['CONTACT_EMAIL est vide dans src/index.html'];
+  const inEnv = (process.env.CONTACT_EMAIL || '').trim();
+  if (inEnv && inEnv !== inPage) {
+    return [`CONTACT_EMAIL divergent : front="${inPage}" mais variable d'environnement="${inEnv}"`];
+  }
+  return [];
+}
+
 const problems = [];
 const writtenImgs = new Set();
+problems.push(...checkContactEmail());
 for (const l of LANGS) checkSeo(l);
 
 for (const lang of LANGS) {
@@ -487,6 +521,13 @@ writeFileSync(join(OUT, 'robots.txt'),
 // orphelin : dans les deux cas, on laisse un fichier inutile sur le disque.
 for (const name of stripped.files.keys()) {
   if (!writtenImgs.has(name)) problems.push(`image ecrite jamais referencee -> ${name}`);
+}
+
+const warn = checkPlaceholders();
+if (warn.length) {
+  console.warn('\nLiens de vente non renseignes dans src/index.html (constantes en haut du script) :');
+  for (const w of warn) console.warn('  - ' + w);
+  console.warn('  Les boutons correspondants ne mènent nulle part. Le formulaire de contact, lui, fonctionne.\n');
 }
 
 if (problems.length) {

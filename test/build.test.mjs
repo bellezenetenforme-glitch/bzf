@@ -1,0 +1,161 @@
+/* ------------------------------------------------------------------
+   Tests du HTML genere par build.mjs.
+
+   Ils tournent contre un build existant : lance `npm run build` avant
+   `npm test`, ou utilise `npm run verify` qui enchaine les deux.
+
+   Point d'attention : ces tests verifient des *comptages minimum*. Un
+   controle du style « aucune reference cassee » passerait a vide si la
+   funcionalidad disparaissait completement — c'est deja arrive pendant le
+   developpement, un `git checkout` ayant annule une correction. On compte
+   donc ce qui doit etre la.
+
+   node --test test/
+------------------------------------------------------------------ */
+
+import { test, before } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { resolve, relative } from 'node:path';
+
+const DIST = new URL('../dist/', import.meta.url);
+let built = false;
+
+before(() => {
+  // On construit si besoin : les tests doivent toujours porter sur un dist
+  // correspondant au source courant, sinon ils verifient un vieux build.
+  if (!existsSync(new URL('index.html', DIST))) {
+    execFileSync('node', ['build.mjs'], { cwd: new URL('..', import.meta.url).pathname });
+  }
+  built = true;
+});
+
+const page = (rel) => readFileSync(new URL(rel, DIST), 'utf8');
+
+test('le build a produit les 3 pages', () => {
+  assert.ok(built);
+  for (const f of ['index.html', 'en/index.html', 'es/index.html']) {
+    assert.ok(existsSync(new URL(f, DIST)), `${f} manquant — lance npm run build`);
+  }
+});
+
+test('chaque page a un head localise et unique', () => {
+  const seen = new Set();
+  for (const [rel, lang] of [['index.html', 'fr'], ['en/index.html', 'en'], ['es/index.html', 'es']]) {
+    const p = page(rel);
+    assert.match(p, new RegExp(`<html lang="${lang}">`), `${rel} : <html lang> incorrect`);
+    assert.match(p, new RegExp(`<title>[^<]*${lang === 'fr' ? 'Belle' : lang === 'en' ? 'Beautiful' : 'Bella'}`));
+    assert.match(p, new RegExp(`__BZF_LANG__="${lang}"`));
+    const canonical = /rel="canonical" href="([^"]+)"/.exec(p)[1];
+    assert.ok(canonical.endsWith(lang === 'fr' ? '/' : `/${lang}/`), `${rel} : canonical ${canonical}`);
+    seen.add(canonical);
+  }
+  assert.equal(seen.size, 3, 'les 3 canonical doivent differer');
+});
+
+test('les hreflang sont reciproques sur les 3 pages', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    for (const l of ['fr', 'en', 'es']) {
+      assert.match(p, new RegExp(`hreflang="${l}" href="[^"]*bellezenetenforme\\.fr${l === 'fr' ? '/' : `/${l}/`}"`),
+        `${rel} : hreflang ${l} manquant ou incorrect`);
+    }
+    assert.match(p, /hreflang="x-default"/, `${rel} : x-default manquant`);
+  }
+});
+
+test('les chemins d images se resolvent depuis chaque page', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    const dir = resolve('dist', rel.replace(/index\.html$/, ''));
+    // Quatre formes de reference coexistent : attributs src/href, url() CSS,
+    // valeurs de SECBG et chaines JS des produits. En scanner une seule, on
+    // ne verrait que les 6 images du hero, des logos et de l'avatar.
+    const refs = new Set([
+      ...[...p.matchAll(/(?:src|href)=["']([^"']+\.(?:webp|png|jpe?g))["']/g)].map((m) => m[1]),
+      ...[...p.matchAll(/url\(['"]?([^'")]*\.(?:webp|png|jpe?g))/g)].map((m) => m[1]),
+      ...[...p.matchAll(/"[^"]+"\s*:\s*"([^"]+\.(?:webp|png|jpe?g))"/g)].map((m) => m[1]),
+      ...[...p.matchAll(/\bimg\s*:\s*"([^"]+\.(?:webp|png|jpe?g))"/g)].map((m) => m[1]),
+    ]);
+    assert.ok(refs.size >= 25, `${rel} : seulement ${refs.size} image(s) referencee(s), 25 attendues`);
+    for (const ref of refs) {
+      if (/favicon\.png$/.test(ref)) continue;
+      assert.ok(existsSync(resolve(dir, ref)), `${rel} : ${ref} ne resout pas`);
+    }
+  }
+});
+
+test('aucune image raster ne reste en base64', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    assert.doesNotMatch(page(rel), /data:image\/(webp|png|jpe?g);base64/, `${rel} : base64 subsiste`);
+  }
+});
+
+test('le hero est precharge et prioritaire, les autres sont paresseuses', () => {
+  const p = page('index.html');
+  assert.match(p, /<link rel="preload" as="image" href="img\/[^"]+\.webp" fetchpriority="high">/);
+  assert.match(p, /<img id="heroImg"[^>]*loading="eager"[^>]*fetchpriority="high"/);
+  const lazy = (p.match(/loading="lazy"/g) || []).length;
+  assert.ok(lazy >= 2, `seulement ${lazy} image(s) en loading=lazy`);
+});
+
+/* ---------- accessibilite du formulaire ---------- */
+
+test('chaque label pointe vers un champ existant', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    const ids = new Set([...p.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+    const fors = [...p.matchAll(/<label for="([^"]+)"/g)].map((m) => m[1]);
+
+    // Comptage minimum : sans cela le test passerait a vide si les labels
+    // perdaient leur attribut for.
+    assert.ok(fors.length >= 11, `${rel} : seulement ${fors.length} label(s) associe(s), 11 attendus`);
+
+    for (const f of fors) {
+      assert.ok(ids.has(f), `${rel} : label for="${f}" ne pointe vers aucun id`);
+      // un div de chips n'est pas un element labelable : il faut aria, pas for
+      const tag = new RegExp(`id="${f}"[^>]*`).exec(p)[0];
+      assert.doesNotMatch(tag, /class="chips/, `${rel} : for pointe vers un div de chips`);
+    }
+    for (const m of p.matchAll(/aria-labelledby="([^"]+)"/g)) {
+      assert.ok(ids.has(m[1]), `${rel} : aria-labelledby="${m[1]}" orphelin`);
+    }
+  }
+});
+
+test('les 3 groupes de chips sont nommes', () => {
+  const p = page('index.html');
+  const groups = (p.match(/role="group" aria-labelledby=/g) || []).length;
+  assert.equal(groups, 3, `${groups} groupe(s) de chips nomme(s), 3 attendus`);
+});
+
+/* ---------- SEO ---------- */
+
+test('les textes SEO respectent les limites de Google', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    const title = /<title>([^<]*)<\/title>/.exec(p)[1];
+    const desc = /<meta name="description" content="([^"]*)"/.exec(p)[1];
+    assert.ok(title.length <= 65, `titre trop long : ${title.length}`);
+    assert.ok(desc.length <= 160, `description trop longue : ${desc.length}`);
+  }
+});
+
+test('le francais porte ses accents', () => {
+  const p = page('index.html');
+  const title = /<title>([^<]*)<\/title>/.exec(p)[1];
+  const desc = /<meta name="description" content="([^"]*)"/.exec(p)[1];
+  assert.match(title + desc, /[éèêàçù]/, 'aucun accent dans les textes SEO francais');
+});
+
+test('les cartes de partage existent', () => {
+  for (const f of ['og-fr.png', 'og-en.png', 'og-es.png', 'favicon.png', 'robots.txt', 'sitemap.xml']) {
+    assert.ok(existsSync(new URL(f, DIST)), `${f} manquant`);
+  }
+});
+
+test('sitemap et robots pointent vers le bon domaine', () => {
+  assert.match(page('sitemap.xml'), /<loc>https:\/\/bellezenetenforme\.fr\/<\/loc>/);
+  assert.match(page('robots.txt'), /Sitemap: https:\/\/bellezenetenforme\.fr\/sitemap\.xml/);
+});

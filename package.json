@@ -6,6 +6,9 @@
   "description": "Site BZF : page par langue generee au build, questionnaire de contact via Netlify Function et Resend.",
   "scripts": {
     "build": "node build.mjs",
+    "test": "node --test test/",
+    "verify": "node build.mjs && node --test test/",
+    "check:config": "node scripts/check-config.mjs",
     "dev": "netlify dev"
   },
   "devDependencies": {
