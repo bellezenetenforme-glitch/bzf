@@ -7,7 +7,11 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const TO_EMAIL = process.env.TO_EMAIL || process.env.CONTACT_EMAIL || '';
-const FROM_EMAIL = process.env.FROM_EMAIL || 'BZF <onboarding@resend.dev>';
+// Pas de repli sur onboarding@resend.dev : c'est le domaine de test de Resend,
+// qui ne livre qu'a l'adresse du compte Resend. Avec ce repli, l'API renvoie
+// 200, le site affiche "envoye" et le lead disparait sans trace. Une
+// configuration manquante doit echouer bruyamment, pas silencieusement.
+const FROM_EMAIL = process.env.FROM_EMAIL || '';
 
 /* ------------------------------------------------------------------
    Anti-spam
@@ -121,6 +125,9 @@ export const handler = async (event) => {
   }
   if (!RESEND_API_KEY) {
     return json(null, 503, { success: false, error: 'Resend non configuré (RESEND_API_KEY manquant).' });
+  }
+  if (!FROM_EMAIL) {
+    return json(null, 503, { success: false, error: 'Expediteur non configure (FROM_EMAIL manquant).' });
   }
   if (!TO_EMAIL) {
     return json(null, 503, { success: false, error: 'Email de destination manquant (CONTACT_EMAIL/TO_EMAIL).' });

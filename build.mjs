@@ -48,18 +48,33 @@ const OG = {
 // Titres et descriptions par langue, pour la recherche et les liens.
 const SEO = {
   fr: {
-    title: 'BZF — Belle, zen et en forme | Conseil FitLine personnalise',
-    desc: 'Steff, partenaire independante FitLine, te conseille et te compose une routine de produits adapted a ton objectif : energie, sommeil, glow ou forme. Remplis le questionnaire en 2 minutes.',
+    title: 'BZF — Belle, zen et en forme | Conseil FitLine personnalisé',
+    desc: 'Steff, partenaire indépendante FitLine, compose avec toi une routine de produits adaptée à ton objectif : énergie, sommeil, glow ou forme. Réponds en 2 minutes.',
   },
   en: {
-    title: 'BZF — Beautiful, calm and in shape | Personalised FitLine advice',
+    title: 'BZF — Beautiful, calm and in shape | FitLine advice',
     desc: 'Steff, an independent FitLine partner, builds a routine matched to your goal: energy, sleep, glow or shape. Fill in the 2-minute questionnaire.',
   },
   es: {
     title: 'BZF — Bella, zen y en forma | Consejo personalizado FitLine',
-    desc: 'Steff, partner independiente de FitLine, te recomienda una rutina segun tu objetivo: energia, sueno, glow o figura. Rellena el cuestionario en 2 minutos.',
+    desc: 'Steff, partner independiente de FitLine, te recomienda una rutina según tu objetivo: energía, sueño, glow o figura. Rellena el cuestionario en 2 minutos.',
   },
 };
+
+/* Google tronque le titre autour de 60 caracteres et la description autour de
+   160. On verifie plutot que de le decouvrir apres coup dans les resultats.
+   Les textes sont affiches aux utilisateurs : ils doivent porter leurs
+   accents, contrairement au reste du code qui est en ASCII. */
+const SEO_TITLE_MAX = 65;
+const SEO_DESC_MAX = 160;
+function checkSeo(lang) {
+  const { title, desc } = SEO[lang];
+  if (title.length > SEO_TITLE_MAX) problems.push(`${lang}: titre SEO trop long (${title.length} > ${SEO_TITLE_MAX})`);
+  if (desc.length > SEO_DESC_MAX) problems.push(`${lang}: description SEO trop longue (${desc.length} > ${SEO_DESC_MAX})`);
+  if (/[a-z]/.test(title) && !/[àâçéèêëîïôùûüÿœæ]/i.test(title + desc) && lang === 'fr') {
+    problems.push(`${lang}: textes SEO sans accent`);
+  }
+}
 
 /* ---------- utilitaires ---------- */
 
@@ -373,6 +388,7 @@ const heroFor = (lang) => (lang === 'fr' ? '' : '../') + 'img/' + stripped.hero;
 
 const problems = [];
 const writtenImgs = new Set();
+for (const l of LANGS) checkSeo(l);
 
 for (const lang of LANGS) {
   let page = stripped.text

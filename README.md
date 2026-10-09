@@ -88,18 +88,50 @@ n'a plus d'images. Utilise `npm run dev`.
 1. Créer un compte sur https://app.netlify.com et un fichier de clé API Resend sur https://resend.com.
 2. Importer ton dépôt git dans Netlify (Add new site > Import from Git),
    ou déployer manuellement via `netlify deploy`.
-3. **Renseigner les variables d'environnement** (Site settings > Environment variables) :
-   - `RESEND_API_KEY` — ta clé Resend (exigée pour l'envoi réel).
+3. **Valider ton domaine** sur https://resend.com/domains — sans ça, Resend
+   refuse tout expéditeur qui ne soit pas `onboarding@resend.dev`.
+4. **Renseigner les variables d'environnement** (Site settings > Environment variables) :
+   - `RESEND_API_KEY` — ta clé Resend.
    - `CONTACT_EMAIL` — destination des réponses (`bellezenetenforme@gmail.com`).
-   - `FROM_EMAIL` — expéditeur, ex. `BZF <onboarding@resend.dev>` (à valider dans Resend).
-4. Redéployer. Le formulaire appelle automatiquement `/.netlify/functions/contact`.
-
-Aucun build n'est nécessaire : `netlify.toml` indique de publier la racine.
+   - `FROM_EMAIL` — expéditeur sur ton domaine validé, ex.
+     `BZF <contact@bellezenetenforme.fr>`.
+5. Redéployer. Le formulaire appelle automatiquement `/.netlify/functions/contact`.
 
 ## Configurer Resend
 
+### ⚠️ `FROM_EMAIL` est obligatoire, volontairement
+
+La fonction **n'a pas de valeur de repli**. Si `FROM_EMAIL` n'est pas définie,
+elle répond `503` et n'envoie rien.
+
+C'est un choix : `onboarding@resend.dev`, le seul expéditeur qui fonctionne sans
+domaine validé, ne livre qu'à l'adresse du compte Resend. Avec ce repli,
+l'API répond 200, le site affiche « envoyé », et le message n'arrive jamais —
+un lead perdu sans le moindre signal. Un échec bruyant vaut mieux.
+
+Si un client te dit « j'ai envoyé le formulaire et rien reçu », regarde d'abord
+si `FROM_EMAIL` est bien posée sur Netlify : c'est la cause la plus fréquente.
+
+### Si un vrai client ne reçoit rien
+
+Deux causes possibles, dans cet ordre :
+
+1. `FROM_EMAIL` absente ou pointant sur `onboarding@resend.dev` → la fonction
+   répond 503 et l'écran d'erreur du site propose le `mailto:` de secours.
+2. Ton origine n'est pas dans la liste `ALLOWED_ORIGINS` → la requête est
+   rejetée **en silence** (voir la section anti-spam plus bas).
+
 Le fallback du front : si l'envoi échoue, le site propose un `mailto:` pré-rempli
 avec toutes les réponses afin que rien ne soit perdu.
+
+## Titres et descriptions SEO
+
+`build.mjs` les porte, avec une assertion qui refuse de publier un titre de
+plus de 65 caractères, une description de plus de 160, ou un texte français
+sans accent — c'est du contenu affiché par Google, pas du code.
+
+Les trois langues sont là : `/`, `/en/`, `/es/`. Les textes sont à relire si
+ton positionnement change, dans `SEO` en haut de `build.mjs`.
 
 ## Anti-spam
 
