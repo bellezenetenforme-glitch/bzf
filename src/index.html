@@ -602,6 +602,14 @@
   .quest-done h3{font-size:clamp(1.7rem,5vw,2.6rem);color:#fff;margin-bottom:1rem;}
   .quest-done p{color:#B8B8BC;font-size:1rem;line-height:1.6;}
   .quest-done .btn{margin-top:2rem;}
+  /* Diagnostic de maintenance : discret, replie, jamais lu par la visiteuse. */
+  .quest-err #errDiag{margin:1.6rem auto 0;max-width:34rem;text-align:left;}
+  .quest-err #errDiag summary{cursor:pointer;font-size:.8rem;color:#8A8A90;letter-spacing:.02em;}
+  .quest-err #errDiag summary:hover{color:#B8B8BC;}
+  .quest-err #errDiag[open] summary{margin-bottom:.6rem;}
+  .err-diag-text{margin:0;font-family:'Space Mono',monospace;font-size:.72rem;line-height:1.6;
+    color:#7E7E86;background:rgba(255,255,255,.04);border-left:2px solid rgba(255,5,125,.5);
+    padding:.7rem .9rem;border-radius:0 4px 4px 0;word-break:break-word;}
   #quizForm.fade-out{opacity:0;transform:scale(.98);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1);pointer-events:none;}
   .form-submit[disabled]{opacity:.75;cursor:progress;}
   .form-submit .spin-sm{display:none;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:.5rem;
@@ -776,6 +784,10 @@
       <h3 class="display" data-i18n="err_title"></h3>
       <p data-i18n="err_help"></p>
       <a href="#" class="btn btn-primary magnetic contact-link" data-i18n="err_cta"></a>
+      <details id="errDiag">
+        <summary data-i18n="err_details"></summary>
+        <p class="err-diag-text" id="errDiagText"></p>
+      </details>
     </div>
   </div>
 </section>
@@ -928,6 +940,7 @@ const T = {
     ok_back:"Retour à l'accueil →",
     err_title:"Oups, un problème technique.", err_cta:"Écris-moi directement →",
     err_help:"Tes réponses sont déjà écrites dans ton application mail. Il ne reste qu'à envoyer.",
+    err_details:"Détails techniques",
     res_routine:"Ta routine suggérée", res_mail:"M'envoyer mes réponses par mail ✉", res_order:"Commander maintenant →",
     res_retry:"Refaire le questionnaire",
     why_tag:"Pourquoi passer par moi", why_title:"Commander seule,<span class='wt-sub'>c'est possible. Se tromper de produit, c'est facile.</span>",
@@ -996,6 +1009,7 @@ const T = {
     ok_back:"Back to home →",
     err_title:"Oops, technical issue.", err_cta:"Write to me directly →",
     err_help:"Your answers are already written in your mail app. All you have to do is send.",
+    err_details:"Technical details",
     res_routine:"Your suggested routine", res_mail:"Send me your answers by email ✉", res_order:"Order now →",
     res_retry:"Start over",
     why_tag:"Why go through me", why_title:"Ordering alone,<span class='wt-sub'>that works. Picking the wrong product is just as easy.</span>",
@@ -1064,6 +1078,7 @@ const T = {
     ok_back:"Volver al inicio →",
     err_title:"Ups, problema técnico.", err_cta:"Escríbeme directamente →",
     err_help:"Tus respuestas ya están escritas en tu aplicación de correo. Solo tienes que enviarlas.",
+    err_details:"Detalles técnicos",
     res_routine:"Tu rutina sugerida", res_mail:"Enviarme tus respuestas por correo ✉", res_order:"Pedir ahora →",
     res_retry:"Volver a empezar",
     why_tag:"Por qué conmigo", why_title:"Pedir sola,<span class='wt-sub'>se puede. Equivocarse de producto, también.</span>",
@@ -1562,9 +1577,16 @@ function buildSubject(a){
    le message vers CONTACT_EMAIL.
    Si l'envoi echoue (reseau, fonction indisponible), l'ecran d'erreur
    propose un mailto pre-rempli avec toutes les reponses : rien n'est perdu.
+
+   sendToSteff ne renvoie pas un booleen mais {ok, reason, detail} : c'est
+   le serveur, pas le client, qui sait si l'envoi a echoue parce que le
+   reseau est coupe, parce que trop de requetes sont arrivees, ou parce
+   que Resend refuse le domaine d'expedition. Ecraser tout cela en `false`
+   donnait a la visiteuse le meme ecran dans tous les cas, et a la
+   mainteneuse aucun indice pour trouver la panne.
    ------------------------------------------------------------------ */
 async function sendToSteff(subject, body, a){
-  if(!API_URL) return false;
+  if(!API_URL) return {ok:false, reason:'config', detail:'API_URL vide'};
   try{
     const r = await fetch(API_URL, {
       method:'POST',
@@ -1579,12 +1601,25 @@ async function sendToSteff(subject, body, a){
         _t:      elapsedFill()
       })
     });
-    if(!r.ok) return false;
     const j = await r.json().catch(()=>({}));
-    return j && j.success === true;
+
+    if(r.ok) return (j && j.success === true)
+      ? {ok:true, reason:null, detail:''}
+      : {ok:false, reason:'rejected', detail:String(j.error || 'reponse 200 sans success')};
+
+    const why = String(j.error || '');
+    // 503 est le code que la fonction renvoie quand une variable
+    // d'environnement manque : c'est une erreur de configuration de notre
+    // cote, pas une panne de service. Le classer en `server` enverrait
+    // chercher un incident qui n'existe pas.
+    const reason = r.status === 429 ? 'rate'
+                 : r.status === 503 ? 'config'
+                 : r.status >= 500 ? 'server'
+                 : 'config';
+    return {ok:false, reason, detail:why ? r.status+' — '+why : 'HTTP '+r.status};
   }catch(e){
     console.warn('Envoi du questionnaire impossible :', e);
-    return false;
+    return {ok:false, reason:'offline', detail:(e && e.message) || 'requete impossible'};
   }
 }
 
@@ -1608,12 +1643,12 @@ form.addEventListener('submit', async e=>{
   const span = submitBtn.querySelector('span');
   if(span) span.textContent = (T[LANG].form_sending || '…');
 
-  const envoye = await sendToSteff(subject, body, a);
+  const r = await sendToSteff(subject, body, a);
 
   submitBtn.disabled = false; submitBtn.classList.remove('loading');
   if(span) span.textContent = (T[LANG].form_submit || '→');
 
-  if(envoye){
+  if(r.ok){
     crossfadeTo(okScreen);
   }else{
     // secours : un mail pre-rempli avec l'integralite des reponses
@@ -1623,6 +1658,10 @@ form.addEventListener('submit', async e=>{
                 + '?subject=' + encodeURIComponent(subject)
                 + '&body='    + encodeURIComponent(body);
     }
+    // Le motif va dans un <details> replie : la visiteuse garde le meme
+    // message prudent, la maintenaise voit pourquoi l'envoi a echoue.
+    const diag = errScreen.querySelector('#errDiagText');
+    if(diag) diag.textContent = (r.reason ? '['+r.reason+'] ' : '') + (r.detail || '');
     crossfadeTo(errScreen);
   }
 });

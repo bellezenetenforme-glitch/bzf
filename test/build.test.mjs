@@ -350,3 +350,45 @@ test('sitemap et robots pointent vers le bon domaine', () => {
   assert.ok(page('robots.txt').includes(`Sitemap: ${SITE_ORIGIN}/sitemap.xml`),
     "robots.txt : l'URL du site ne correspond pas a SITE_ORIGIN");
 });
+/* ---------- diagnostic de l'ecran d'erreur ----------
+
+   L'ecran d'erreur affiche « Oups, un probleme technique » quel que soit
+   l'echec : un 502 de Netlify et un 403 de Resend produisent le meme
+   ecran. C'est ce qui a rendu une panne reelle impossible a diagnostiquer
+   depuis le site. Le motif exact est donc affiche dans un <details> replie,
+   visible par la mainteneuse mais invisible pour la visiteuse. */
+
+test('l ecran d erreur porte un bloc de diagnostic replie', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    assert.match(p, /id="errDiag"/, `${rel} : bloc de diagnostic absent`);
+    assert.match(p, /<details[^>]*id="errDiag"/, `${rel} : le diagnostic doit etre un <details>`);
+    // Replie par defaut : sans cet attribut, la visiteuse voit du francais
+    // technique et l'ecartement de la configuration du compte est public.
+    assert.match(p, /<details(?![^>]*\sopen)[^>]*id="errDiag"/,
+      `${rel} : le <details> doit etre replie`);
+    assert.match(p, /data-i18n="err_details"/, `${rel} : intitule du diagnostic non traduit`);
+  }
+});
+
+test('chaque langue traduit l intitule du diagnostic', () => {
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const labels = { fr: 'Détails techniques', en: 'Technical details', es: 'Detalles técnicos' };
+  for (const [lang, label] of Object.entries(labels)) {
+    const m = new RegExp(`err_details:"${label}"`).exec(src);
+    assert.ok(m, `err_details absent ou incorrect en ${lang} ("${label}")`);
+  }
+});
+
+test('sendToSteff distingue les echecs au lieu de tout reducing a false', () => {
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  // Un simple `return false` recreerait exactement l'ecrasement qu'on
+  // cherche a supprimer : tous les motifs redevenant indistinguables.
+  assert.doesNotMatch(src, /if\(\s*!\s*r\.ok\s*\)\s*return false/,
+    'sendToSteff reduit encore tous les echecs HTTP a false');
+  // Les raisons doivent etre couvertes, pas seulement le cas nominal.
+  for (const reason of ['offline', 'rate', 'server', 'config', 'rejected']) {
+    assert.match(src, new RegExp(`'${reason}'|\\b${reason}\\b`),
+      `raison "${reason}" jamais produite`);
+  }
+});
