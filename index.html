@@ -186,18 +186,23 @@
   .quest{background:var(--black);color:#fff;padding:5rem 0;}
   .quest .sec-head h2{color:#fff;}
   .quest .sec-head p{color:#B8B8BC;}
-  .form-card{max-width:640px;margin:0 auto;background:var(--black-2);border:1px solid var(--line-dark);border-radius:24px;padding:clamp(1.4rem,4vw,2.4rem);}
+  .form-card{max-width:640px;margin:0 auto;background:#fff;border:1px solid var(--line);color:var(--black);border-radius:24px;padding:clamp(1.4rem,4vw,2.4rem);}
   .field{margin-bottom:1.2rem;}
-  .field label{display:block;font-size:0.8rem;color:#B8B8BC;margin-bottom:0.5rem;font-weight:500;}
-  .field input,.field select,.field textarea{width:100%;background:#141417;border:1px solid var(--card-border);border-radius:12px;
-    padding:0.85rem 1rem;color:#fff;font-family:inherit;font-size:0.92rem;transition:border-color .2s;}
-  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--pink);}
+  .field label{display:block;font-size:0.8rem;color:#4A4C52;margin-bottom:0.5rem;font-weight:500;}
+  /* champ piege anti-spam : invisible pour l'humain, atteignable par les bots */
+  .hp-field{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;}
+  .field input,.field select,.field textarea{width:100%;background:var(--off);border:1px solid #C9CCD4;border-radius:12px;
+    padding:0.85rem 1rem;color:var(--black);font-family:inherit;font-size:0.92rem;transition:border-color .2s, box-shadow .2s;}
+  /* le navigateur ne grise pas assez le placeholder sur fond clair : on le fixe */
+  .field input::placeholder,.field textarea::placeholder{color:#6B6E76;opacity:1;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--pink);
+    box-shadow:0 0 0 3px rgba(255,5,125,.15);}
   .field textarea{resize:vertical;min-height:80px;}
-  .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A8A8E' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;}
+  .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6E76' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem;}
   @media(max-width:520px){.field-row{grid-template-columns:1fr;}}
   .chips{display:flex;flex-wrap:wrap;gap:0.5rem;}
-  .chip{padding:0.5rem 0.9rem;border:1px solid var(--card-border);border-radius:100px;font-size:0.8rem;color:#B8B8BC;user-select:none;transition:all .2s;background:#141417;}
+  .chip{padding:0.5rem 0.9rem;border:1px solid #C9CCD4;border-radius:100px;font-size:0.8rem;color:#4A4C52;user-select:none;transition:all .2s;background:#fff;}
   .chip.on{background:var(--pink);border-color:var(--pink);color:#fff;}
   .form-submit{width:100%;margin-top:0.6rem;justify-content:center;}
   .form-note{font-size:0.72rem;color:#6B6E76;text-align:center;margin-top:1rem;line-height:1.5;}
@@ -715,6 +720,10 @@
     </div>
 
     <form class="form-card reveal" id="quizForm">
+      <div class="hp-field" aria-hidden="true">
+        <label for="hpCheck">Ne pas remplir ce champ</label>
+        <input type="text" id="hpCheck" name="_hp" tabindex="-1" autocomplete="off">
+      </div>
       <div class="field-row">
         <div class="field"><label data-i18n="f_name"></label><input type="text" name="prenom" data-i18n-ph="f_name_ph" required></div>
         <div class="field"><label data-i18n="f_age"></label><input type="number" name="age" min="10" max="99" data-i18n-ph="f_age_ph"></div>
@@ -1457,6 +1466,25 @@ const errScreen=document.getElementById('formErr');
 const submitBtn=document.getElementById('formSubmitBtn');
 const activiteSel=document.getElementById('activiteSel');
 const activiteWrap=document.getElementById('activiteWrap');
+const hpField=document.getElementById('hpCheck');
+
+/* Anti-spam : on note le premier moment reel d'interaction avec le
+   formulaire. Un humain met plusieurs secondes a remplir le questionnaire ;
+   un bot qui poste direct part avec ~0. Le delai est renvoye a la fonction. */
+let firstTouch=0;
+const loadedAt=Date.now();
+function stampFirstTouch(){
+  if(!firstTouch) firstTouch=Date.now();
+}
+if(form){
+  form.addEventListener('pointerdown',stampFirstTouch,{passive:true});
+  form.addEventListener('keydown',stampFirstTouch);
+  form.addEventListener('focusin',stampFirstTouch);
+}
+/* Delai mesure. Sans aucune interaction (autofill + Entree, par exemple), on
+   se rabat sur le temps ecoule depuis le chargement : un vrai visiteur sera
+   au-dela du seuil, un bot qui poste sans interagir non. */
+function elapsedFill(){ return Date.now() - (firstTouch || loadedAt); }
 
 /* Q4 n'apparaît que si une activité est déclarée */
 function syncActivite(){
@@ -1503,9 +1531,10 @@ function buildSubject(a){
 }
 
 /* ------------------------------------------------------------------
-   Envoi des reponses par email, via le backend Node/Express
-   (voir server/). Le backend envoie le message vers CONTACT_EMAIL.
-   Si l'envoi echoue (reseau, backend indisponible), l'ecran d'erreur
+   Envoi des reponses par email, via la Netlify Function
+   (netlify/functions/contact.mjs -> API Resend). La fonction envoie
+   le message vers CONTACT_EMAIL.
+   Si l'envoi echoue (reseau, fonction indisponible), l'ecran d'erreur
    propose un mailto pre-rempli avec toutes les reponses : rien n'est perdu.
    ------------------------------------------------------------------ */
 async function sendToSteff(subject, body, a){
@@ -1519,7 +1548,9 @@ async function sendToSteff(subject, body, a){
         Prenom:  a.prenom  || '-',
         Contact: a.contact || '-',
         Canal:   a.canal   || '-',
-        Message: body
+        Message: body,
+        _hp:     hpField ? hpField.value : '',
+        _t:      elapsedFill()
       })
     });
     if(!r.ok) return false;
