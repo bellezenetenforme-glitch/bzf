@@ -148,12 +148,20 @@ Quatre constantes en haut du script de `src/index.html` (ligne ~857) sont encore
 à `#` ou vides. Tant qu'elles le sont, `npm run build` le signale et
 `npm run check:config` les liste.
 
-| Constante | Effet si laissée à `#` |
+Ce sont des **ancres internes**, pas des URL : elles valent `#questionnaire` et
+`#team`, pas `https://…`.
+
+| Constante | Ce qu'elle pilote |
 | --- | --- |
-| `CONTACT_LINK` | le CTA principal bascule sur le `mailto:` de secours |
-| `PROMO_LINK` | le lien du code promo ne mène nulle part |
-| `TEAM_LINK` | « Rejoindre la Team » bascule sur le `mailto:` de candidature |
-| `PROMO_CODE` | le bloc de code promo est masqué |
+| `CONTACT_LINK` → `#questionnaire` | le bouton « Écris-moi directement » de l'écran d'erreur, qui renvoie vers le formulaire |
+| `TEAM_LINK` → `#team` | le bouton « Rejoindre la Team » de l'en-tête |
+| `PROMO_LINK` → à définir | le lien à côté du code partenaire dans le footer |
+| `PROMO_CODE` → à définir | le texte affiché ; le bloc footer est masqué tant que c'est vide |
+
+Une ancre qui pointe vers un `id` inexistant est un lien mort silencieux — la
+page ne bouge pas. Un test échoue si une de ces ancres n'existe pas, et vérifie
+aussi que le bouton Team porte bien l'`id` que `TEAM_LINK` pilote : sans ça,
+une constante invalide passerait inaperçue derrière une ancre en dur.
 
 Les boutons « Commande maintenant » des sections produits, eux, fonctionnent
 déjà : ils passent par `shopUrl(c.shop)`, de vrais liens FitLine.

@@ -623,7 +623,7 @@
 <header>
   <a class="brand" href="#top"><span class="bzf-logo" role="img" aria-label="BZF — Belle, zen et en forme"></span></a>
   <div class="header-right">
-    <a class="header-cta magnetic" href="#team" data-i18n="nav_join"></a>
+    <a class="header-cta magnetic" id="teamLink" href="#team" data-i18n="nav_join"></a>
     <div class="lang-switch">
     <button class="lang-btn" data-lang="fr">FR</button>
     <button class="lang-btn" data-lang="en">EN</button>
@@ -855,8 +855,8 @@
    0. TES LIENS ET TON CODE — modifie uniquement ces lignes
    ============================================================ */
 const SPONSOR_ID   = "21156995";   // identifiant partenaire FitLine : alimente automatiquement tous les liens
-const CONTACT_LINK = "#";  // lien vers ta boutique / ton profil partenaire
-const PROMO_LINK   = "#";  // lien avec ton code promo (mention discrete du footer)
+const CONTACT_LINK = "#questionnaire";  // ancre interne : bouton "Ecris-moi" de l'ecran d'erreur
+const PROMO_LINK   = "#";  // lien du code promo ; bloc masque tant que PROMO_CODE est vide
 const CONTACT_EMAIL= "bellezenetenforme@gmail.com";   // email de contact (bouton "C'est aujourd'hui" + icone mail)
 const API_URL      = "/.netlify/functions/contact"; // endpoint Netlify Function (voir netlify/functions/contact.mjs)
 const PROMO_CODE   = "";   // ton code promo
@@ -864,7 +864,7 @@ const INSTAGRAM    = "https://www.instagram.com/enjoy_your_life_by_steff/";
 const FACEBOOK     = "https://www.facebook.com/SteffBZF";
 const MESSENGER    = "https://m.me/SteffBZF";
 const BLOG         = "https://bellezenetenforme.fr/";
-const TEAM_LINK    = "#";  // lien pour postuler a la Team
+const TEAM_LINK    = "#team";  // ancre de la section Team
 
 /* Construit une URL produit avec ton identifiant partenaire s'il est renseigne. */
 function shopUrl(u){
@@ -1346,7 +1346,10 @@ function fillLinks(){
     ? CONTACT_LINK
     : (CONTACT_EMAIL ? 'mailto:' + CONTACT_EMAIL : '#');
   document.querySelectorAll('.contact-link').forEach(el=>el.href=secours);
-  document.querySelectorAll('.team-link').forEach(el=>el.href=TEAM_LINK);
+  // TEAM_LINK pilote le bouton "Rejoindre la Team" de l'en-tete, qui avait
+  // son ancre en dur. Une seule source de verite.
+  const tl=document.getElementById('teamLink');
+  if(tl && TEAM_LINK && TEAM_LINK!=='#') tl.href=TEAM_LINK;
   const joinSubj={fr:"Je veux rejoindre la Team BZF",en:"I want to join the BZF Team",es:"Quiero unirme a la Team BZF"};
   const joinBody={fr:"Salut Steff,\n\nJe veux en savoir plus sur l'équipe.\n\nMon prénom :\nMon âge :\nMa ville :\nPourquoi ça m'intéresse :\n",
                   en:"Hi Steff,\n\nI'd like to know more about the team.\n\nFirst name:\nAge:\nCity:\nWhy I'm interested:\n",

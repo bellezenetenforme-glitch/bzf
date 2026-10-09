@@ -205,6 +205,40 @@ test('donnees structurelees valides et locales', () => {
   }
 });
 
+test('les ancres des constantes pointent vers un element qui existe', () => {
+  // Une ancre vers un id inexistant est un lien mort silencieux : la page
+  // ne bouge pas. Les sections produits (id:"energie"...) ne sont creees que
+  // par renderNeeds(), donc on verifie aussi le dictionnaire CATEGORIES, pas
+  // seulement le HTML statique.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const const_ = (n) => {
+    const m = new RegExp('const ' + n + '\\s*=\\s*"([^"]*)"').exec(src);
+    return m ? m[1] : '';
+  };
+
+  const statique = new Set(
+    [...readFileSync(new URL('index.html', DIST), 'utf8').matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  const dynamique = new Set(
+    [...src.matchAll(/\bid:"([a-z0-9]+)"/g)].map((m) => m[1]));
+  const connus = new Set([...statique, ...dynamique]);
+
+  for (const nom of ['CONTACT_LINK', 'TEAM_LINK']) {
+    const v = const_(nom);
+    assert.ok(v && v !== '#', `${nom} encore a "#"`);
+    assert.match(v, /^#[a-z0-9-]+$/, `${nom} n'est pas une ancre interne : ${v}`);
+    const cible = v.slice(1);
+    assert.ok(connus.has(cible), `${nom} pointe vers #${cible}, qui n'existe pas`);
+  }
+});
+
+test('le bouton Team est pilote par TEAM_LINK', () => {
+  const p = page('index.html');
+  assert.match(p, /id="teamLink"/, "le bouton Team n'a pas d'id, TEAM_LINK ne peut pas le piloter");
+  // L'ancre est aussi posee en dur : si TEAM_LINK etait invalide, le bouton
+  // resterait fonctionnel, ce qui masque la regression.
+  assert.match(p, /id="teamLink"[^>]*href="#team"/);
+});
+
 test('sitemap et robots pointent vers le bon domaine', () => {
   assert.match(page('sitemap.xml'), /<loc>https:\/\/bellezenetenforme\.fr\/<\/loc>/);
   assert.match(page('robots.txt'), /Sitemap: https:\/\/bellezenetenforme\.fr\/sitemap\.xml/);
