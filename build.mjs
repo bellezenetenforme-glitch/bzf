@@ -465,8 +465,24 @@ function checkContactEmail() {
   return [];
 }
 
+/* PROMO_LINK et les liens produits doivent porter le meme identifiant
+   partenaire que SPONSOR_ID. S'ils divergent, les visiteurs seraient
+   attribues a quelqu'un d'autre : la commission partirait ailleurs, sans
+   le moindre signe dans les logs. */
+function checkSponsorLink() {
+  const sid = (src.match(/const SPONSOR_ID\s*=\s*"([^"]*)"/) || [, ''])[1];
+  const link = (src.match(/const PROMO_LINK\s*=\s*"([^"]*)"/) || [, ''])[1];
+  if (!link || link === '#') return []; // pas configure : rien a verifier
+  if (!sid) return ['SPONSOR_ID est vide alors que PROMO_LINK est renseigne'];
+  if (!link.includes('sponsor=' + sid)) {
+    return [`PROMO_LINK ne porte pas le SPONSOR_ID "${sid}" : les commissions partiraient ailleurs`];
+  }
+  return [];
+}
+
 const problems = [];
 const writtenImgs = new Set();
+problems.push(...checkSponsorLink());
 problems.push(...checkContactEmail());
 for (const l of LANGS) checkSeo(l);
 

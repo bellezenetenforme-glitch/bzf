@@ -218,8 +218,12 @@ Ce sont des **ancres internes**, pas des URL : elles valent `#questionnaire` et
 | --- | --- |
 | `CONTACT_LINK` → `#questionnaire` | le bouton « Écris-moi directement » de l'écran d'erreur, qui renvoie vers le formulaire |
 | `TEAM_LINK` → `#team` | le bouton « Rejoindre la Team » de l'en-tête |
-| `PROMO_LINK` → à définir | le lien à côté du code partenaire dans le footer |
+| `PROMO_LINK` | renseigné : `https://www.fitline.com/fr/fr-fr?sponsor=21156995` |
 | `PROMO_CODE` → à définir | le texte affiché ; le bloc footer est masqué tant que c'est vide |
+
+`PROMO_LINK` et `SPONSOR_ID` sont vérifiés ensemble au build : s'ils divergent,
+les visiteurs seraient attribués à un autre partenaire et les commissions
+partiraient ailleurs, sans le moindre signe dans les logs.
 
 Une ancre qui pointe vers un `id` inexistant est un lien mort silencieux — la
 page ne bouge pas. Un test échoue si une de ces ancres n'existe pas, et vérifie
