@@ -294,6 +294,34 @@ test('le canal de contact ne propose plus Email', () => {
   }
 });
 
+test('aucune liste de choix n\'impose une reponse', () => {
+  // Sans option vide en tete, le navigateur selectionne la premiere reponse
+  // et chaque lead se voit attribuer une reponse qu\'il n\'a pas donnee.
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    const sels = [...p.matchAll(/<select[^>]*data-i18n-opts="[a-z_]+"[^>]*>([\s\S]*?)<\/select>/g)];
+    assert.equal(sels.length, 5, `${rel} : ${sels.length} liste(s) de choix, 5 attendues`);
+    for (const [, inner] of sels) {
+      const first = /<option[^>]*>/.exec(inner)[0];
+      assert.match(first, /value=""/, `${rel} : la premiere option n\'est pas vide (${first})`);
+      assert.equal((inner.match(/<option/g) || []).length > 1, true,
+        `${rel} : liste vide de vraies options`);
+    }
+  }
+});
+
+test('le runtime reconstruit aussi l\'option vide', () => {
+  // Si setLang() ne la recreait pas, elle disparaitrait apres le changement
+  // de langue et le navigateur re-selectionnerait la premiere reponse.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const at = src.indexOf("querySelectorAll('[data-i18n-opts]')");
+  assert.notEqual(at, -1, "gestion des data-i18n-opts introuvable dans setLang()");
+  // On lit la fenetre qui suit : la construction peut tenir sur plusieurs
+  // lignes, commentaires compris.
+  const fenetre = src.slice(at, at + 500);
+  assert.match(fenetre, /<option value="">/, "setLang() ne prevoit pas d'option vide");
+});
+
 test('sitemap et robots pointent vers le bon domaine', () => {
   assert.ok(page('sitemap.xml').includes(`<loc>${SITE_ORIGIN}/</loc>`),
     "sitemap : l'URL du site ne correspond pas a SITE_ORIGIN");

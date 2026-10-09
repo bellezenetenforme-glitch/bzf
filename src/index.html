@@ -1231,7 +1231,10 @@ function setLang(lang){
   document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ const k=el.dataset.i18nPh; if(t[k]!=null) el.placeholder=t[k]; });
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{ const k=el.dataset.i18nHtml; if(t[k]!=null) el.innerHTML=t[k]; });
   document.querySelectorAll('[data-i18n-opts]').forEach(sel=>{
-    const arr=t[sel.dataset.i18nOpts]||[]; sel.innerHTML=arr.map(o=>`<option>${o}</option>`).join('');
+    const arr=t[sel.dataset.i18nOpts]||[];
+    // Meme option vide que celle du build : sans elle, setLang() la
+    // supprimerait et le navigateur re-selectionnerait la premiere reponse.
+    sel.innerHTML='<option value="">\u2014</option>'+arr.map(o=>`<option>${o}</option>`).join('');
   });
   document.querySelectorAll('[data-i18n-chips]').forEach(box=>{
     const arr=t[box.dataset.i18nChips]||[];

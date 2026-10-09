@@ -174,6 +174,18 @@ Deux causes possibles, dans cet ordre :
 Le fallback du front : si l'envoi échoue, le site propose un `mailto:` pré-rempli
 avec toutes les réponses afin que rien ne soit perdu.
 
+## Ce que le formulaire ne devine pas
+
+Chaque liste déroulante commence par une **option vide** (« — »). Sans elle, le
+navigateur sélectionne la première réponse et chaque lead se voit attribuer des
+réponses qu'il n'a jamais données : « Non jamais » pour les compléments, « Moins
+de 50 € » pour le budget, « Messenger » pour le canal. Sur les 5 listes, cela
+faussait le profil de tout le monde.
+
+Quand un champ est laissé vide, l'email affiche `—` plutôt qu'une valeur fausse.
+L'option vide est présente **à la fois** dans le HTML généré et dans `setLang()` :
+sans cela, un changement de langue la supprimerait et le problème reviendrait.
+
 ## Liens de vente à renseigner
 
 Quatre constantes en haut du script de `src/index.html` (ligne ~857) sont encore

@@ -255,7 +255,12 @@ function bakeText(html, dict, lang) {
     (m, a, key, b) => {
       const v = t(dict, lang, key);
       if (!Array.isArray(v)) { missing.push(key); return m; }
-      return `<select${a}data-i18n-opts="${key}"${b}>${v.map((o) => `<option>${esc(o)}</option>`).join('')}</select>`;
+      // Option vide en tete : sans elle, le navigateur selectionne la
+      // premiere reponse et chaque lead se voit attribuer une reponse qu'il
+      // n'a pas donnee ("Non jamais" pour les complements, par exemple).
+      // buildEmailBody affiche desormais "—" quand le champ est vide.
+      return `<select${a}data-i18n-opts="${key}"${b}><option value="">\u2014</option>`
+        + v.map((o) => `<option>${esc(o)}</option>`).join('') + '</select>';
     },
   );
 
