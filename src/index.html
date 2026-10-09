@@ -1205,6 +1205,11 @@ document.addEventListener('click',e=>{
 
 let LANG = LANG_DEFAULT;
 function detectLang(){
+  // __BZF_LANG__ est injecte par build.mjs dans chaque page (/, /en/, /es/).
+  // Il prime sur tout : la page decide de sa langue, sinon un visiteur FR
+  // arrivant sur /en/ se verrait rebascule en francais par son localStorage
+  // et les hreflang pointeraient vers du contenu qui ne correspond pas a l'URL.
+  if(window.__BZF_LANG__ && T[window.__BZF_LANG__]) return window.__BZF_LANG__;
   const saved = localStorage.getItem('bzf_lang');
   if(saved && T[saved]) return saved;
   const n=(navigator.language||'fr').slice(0,2).toLowerCase();
@@ -1240,7 +1245,16 @@ function setLang(lang){
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
   if(window.ScrollTrigger) ScrollTrigger.refresh();
 }
-document.querySelectorAll('.lang-btn').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+// Sur une page prerendue (build.mjs), changer de langue doit changer d'URL :
+// repeindre la page en francais en restant sur /en/ desynchronise l'URL, le
+// contenu et le hreflang. Hors prerendu (index.html servi directement), on
+// reste sur le comportement d'avant, un simple changement de texte.
+const LANG_ROUTE={fr:'/',en:'/en/',es:'/es/'};
+document.querySelectorAll('.lang-btn').forEach(b=>b.addEventListener('click',()=>{
+  const to=b.dataset.lang;
+  if(window.__BZF_LANG__ && LANG_ROUTE[to]){ window.location.href=LANG_ROUTE[to]; return; }
+  setLang(to);
+}));
 
 /* --- Quiz cards --- */
 function renderQuiz(){

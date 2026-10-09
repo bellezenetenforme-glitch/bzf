@@ -3,6 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "dependencies": {},
-  "devDependencies": {}
+  "description": "Site BZF : page par langue generee au build, questionnaire de contact via Netlify Function et Resend.",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "netlify dev"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  }
 }

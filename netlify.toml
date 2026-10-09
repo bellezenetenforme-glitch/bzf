@@ -1,13 +1,24 @@
 # Configuration Netlify pour le site BZF
-# Le site statique (index.html) est servi depuis la racine.
-# La fonction serverless (contact) envoie les réponses du formulaire par email via Resend.
+# Le site est genere par build.mjs : une vraie page par langue (fr, en, es)
+# avec son <head> localise, son canonical et ses hreflang.
 
 [build]
-  publish = "."
+  command = "node build.mjs"
+  publish = "dist"
   functions = "netlify/functions"
 
-# Redirection de secours pour lancer manuellement via curl si besoin.
 [[redirects]]
+  # Racines de langue vers les pages generees.
+  from = "/en"
+  to = "/en/"
+  status = 301
+[[redirects]]
+  from = "/es"
+  to = "/es/"
+  status = 301
+
+[[redirects]]
+  # Redirection de secours pour lancer manuellement via curl si besoin.
   from = "/api/contact"
   to = "/.netlify/functions/contact"
   status = 200

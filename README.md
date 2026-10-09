@@ -5,10 +5,60 @@ via une **Netlify Function** (serverless) utilisant l'API **Resend**.
 
 ## Structure
 
-- `index.html` — le site (statique, servi par Netlify).
-- `netlify/functions/contact.mjs` — Netlify Function : reçoit `POST` et envoie l'email via l'API REST Resend (`fetch`, aucun SDK à bundler).
+- `src/index.html` — la source du site (statique, HTML + CSS + JS inline).
+- `build.mjs` — génère une vraie page par langue dans `dist/`.
+- `src/og.svg` — gabarit de la carte de partage, rendu en PNG par `@resvg/resvg-js`.
+- `src/fonts/` — les polices de la charte, versionnées pour que la carte de
+  partage rende pareil sur n'importe quelle machine.
+- `netlify/functions/contact.mjs` — Netlify Function : reçoit `POST` et envoie
+  l'email via l'API REST Resend (`fetch`, aucun SDK à bundler).
 - `server/` — *(optionnel)* backend Express/Nodemailer alternatif pour du dev local
   ou une autre plateforme. Non requis pour Netlify.
+
+## Construire
+
+```bash
+npm install     # une seule dépendance : @resvg/resvg-js
+npm run build   # -> dist/
+```
+
+`dist/` n'est pas commité, il est produit par Netlify à chaque déploiement.
+
+## Les pages et les langues
+
+Le site est une page unique dont le texte est traduit en JS à l'exécution. Le
+build produit une **vraie page par langue** :
+
+| URL | Fichier | Usage |
+| --- | --- | --- |
+| `/` | `dist/index.html` | français, `og:locale=fr_FR` |
+| `/en/` | `dist/en/index.html` | anglais, `og:locale=en_GB` |
+| `/es/` | `dist/es/index.html` | espagnol, `og:locale=es_ES` |
+
+Chaque page a son `<title>`, sa description, son `canonical`, ses `hreflang`
+et sa carte de partage `og-{langue}.png`. Le build écrit aussi `sitemap.xml`
+et `robots.txt`.
+
+`build.mjs` injecte `window.__BZF_LANG__` dans chaque page et `detectLang()` le
+privilégie sur `localStorage` : sans cela, un visiteur français arrivant sur
+`/en/` se verrait rebasculer en français et les `hreflang` pointeraient vers un
+contenu qui ne correspond pas à l'URL.
+
+Le sélecteur de langue navigue vers la bonne URL. Hors build (si tu sers
+`src/index.html` directement), il se contente de changer le texte, comme avant.
+
+### Ce que le build ne prerend pas
+
+Les cartes produits et le quiz sont générés par `renderQuiz()` et
+`renderNeeds()` à partir de `CATEGORIES`, qui embarque **609 Ko d'images en
+base64**. Les prerendre triplerait ce poids dans le HTML généré ; ils restent
+donc rendus côté client. Google exécute le JS, donc l'indexation n'en souffre
+pas — mais un scraper social qui n'exécute pas de JS ne les verra pas dans le
+HTML. C'est le compromis à défaire quand les images seront extraites en
+fichiers.
+
+Le build vérifie qu'il ne reste aucun élément i18n vide et échoue avec un code
+de sortie 1 sinon.
 
 ## Déployer sur Netlify (gratuit)
 

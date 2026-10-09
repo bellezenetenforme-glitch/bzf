@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="630" viewBox="0 0 1200 630">
+  <!--
+    Carte de partage Open Graph, 1200x630.
+
+    Les polices sont versionnees dans src/fonts/ et chargees par build.mjs :
+    sans cela le rendu depend des polices installees sur la machine qui
+    construit, et la carte change d'un poste a l'autre.
+
+    Les blocs ci-dessous sont remplaces au build. Ne pas ecrire leurs noms
+    de jeton dans ce commentaire : String.replace() ne remplace que la
+    premiere occurrence, et le commentaire passerait avant les elements.
+
+    Les <text> de contenu n'ont pas de y ici : build.mjs le calcule, sinon
+    un titre sur deux lignes percuterait le sous-titre.
+  -->
+  <rect width="1200" height="630" fill="#0A0A0C"/>
+
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff057d" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#ff057d" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="980" cy="130" r="330" fill="url(#glow)"/>
+  <circle cx="120" cy="560" r="240" fill="url(#glow)" opacity="0.6"/>
+
+  <!-- filet d'accent, meme rose que le bouton du site -->
+  <rect x="80" y="76" width="86" height="8" rx="4" fill="#ff057d"/>
+
+  <image x="80" y="104" width="114" height="140" preserveAspectRatio="xMidYMid meet" xlink:href="__LOGO__"/>
+
+  <text font-family="Barlow Condensed" font-weight="800" font-size="96"
+        fill="#FFFFFF" letter-spacing="-1" data-og="title">__TITLE__</text>
+
+  <text font-family="Inter" font-weight="400" font-size="30"
+        fill="#B8B8BC" data-og="sub">__SUB__</text>
+
+  <text font-family="Space Mono" font-weight="700" font-size="21"
+        fill="#ff057d" letter-spacing="3" data-og="kicker">__KICKER__</text>
+</svg>
