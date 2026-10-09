@@ -322,6 +322,28 @@ test('le runtime reconstruit aussi l\'option vide', () => {
   assert.match(fenetre, /<option value="">/, "setLang() ne prevoit pas d'option vide");
 });
 
+test('le lien boutique du footer est resolu dans le HTML', () => {
+  // Sans resolution au build, le lien serait visible mais pointerait vers "#" :
+  // il ne fonctionnerait que si le JavaScript s'execute.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const expected = (src.match(/const PROMO_LINK\s*=\s*"([^"]*)"/) || [, ''])[1];
+  assert.ok(expected && expected !== '#', 'PROMO_LINK non renseigne');
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const a = /<a [^>]*id="promoShop"[^>]*>/.exec(page(rel));
+    assert.ok(a, `${rel} : lien boutique absent`);
+    assert.ok(a[0].includes(`href="${expected}"`), `${rel} : href non resolu`);
+    assert.match(a[0], /target="_blank"/, `${rel} : un lien externe doit ouvrir un onglet`);
+    assert.match(a[0], /rel="noopener"/, `${rel} : rel="noopener" manquant`);
+  }
+});
+
+test('plus aucune trace de l ancien code promo', () => {
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /PROMO_CODE/, 'PROMO_CODE n existe plus');
+  assert.doesNotMatch(src, /promoCode2/, 'promoCode2 n existe plus');
+  assert.doesNotMatch(src, /footer_promo/, 'footer_promo n existe plus');
+});
+
 test('sitemap et robots pointent vers le bon domaine', () => {
   assert.ok(page('sitemap.xml').includes(`<loc>${SITE_ORIGIN}/</loc>`),
     "sitemap : l'URL du site ne correspond pas a SITE_ORIGIN");

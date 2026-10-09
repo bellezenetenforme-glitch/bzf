@@ -845,7 +845,7 @@
       <a href="#" target="_blank" rel="noopener" id="msLink" aria-label="Messenger"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.3 2 2 6.15 2 11.6c0 3.05 1.4 5.78 3.6 7.57V23l3.3-1.82c.98.27 2.02.42 3.1.42 5.7 0 10-4.15 10-9.6S17.7 2 12 2zm1.02 12.9-2.6-2.77-4.98 2.77 5.5-5.85 2.63 2.77 4.9-2.77-5.45 5.85z"/></svg></a>
       <a href="#" id="mailLink" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.6" y="4.8" width="18.8" height="14.4" rx="2.6"/><path d="m3.4 7.6 8.6 5.9 8.6-5.9"/></svg></a>
     </div>
-    <p class="promo-reminder"><span data-i18n="footer_promo"></span> <a id="promoCode2" href="#" target="_blank" rel="noopener">[TON CODE PROMO]</a></p>
+    <p class="promo-reminder"><a id="promoShop" href="#" target="_blank" rel="noopener" data-i18n="promo_shop"></a></p>
     <p class="disc" data-i18n="footer_disclaimer"></p>
   </div>
 </footer>
@@ -860,7 +860,6 @@ const CONTACT_LINK = "#questionnaire";  // ancre interne : bouton "Ecris-moi" de
 const PROMO_LINK   = "https://www.fitline.com/fr/fr-fr?sponsor=21156995";  // lien du code promo
 const CONTACT_EMAIL= "bellezenetenforme@gmail.com";   // email de contact (bouton "C'est aujourd'hui" + icone mail)
 const API_URL      = "/.netlify/functions/contact"; // endpoint Netlify Function (voir netlify/functions/contact.mjs)
-const PROMO_CODE   = "";   // ton code promo
 const INSTAGRAM    = "https://www.instagram.com/enjoy_your_life_by_steff/";
 const FACEBOOK     = "https://www.facebook.com/SteffBZF";
 const MESSENGER    = "https://m.me/SteffBZF";
@@ -944,7 +943,7 @@ const T = {
     team_challenge:"Dans 90 jours, tu regarderas en arrière et tu te demanderas pourquoi t'as pas commencé avant.",
     team_cta:"C'est aujourd'hui →",
     blog_tag:"Le blog", blog_title:"Envie d'aller plus loin ?", blog_p:"Conseils, routines, recettes et coulisses : je partage tout sur le blog Belle, zen et en forme.", blog_cta:"Découvrir le blog →",
-    footer_promo:"Code partenaire :",
+    promo_shop:"Découvrir la boutique FitLine",
     footer_disclaimer:"Partenaire indépendante FitLine® / PM-International. Ce site n'est pas un site officiel de la marque. Les informations produits sont fournies à titre indicatif et ne remplacent pas un avis médical."
   },
   en:{
@@ -1012,7 +1011,7 @@ const T = {
     team_challenge:"In 90 days, you'll look back and wonder why you didn't start sooner.",
     team_cta:"It starts today →",
     blog_tag:"The blog", blog_title:"Want to go further?", blog_p:"Tips, routines, recipes and behind the scenes: I share it all on the Belle, zen et en forme blog.", blog_cta:"Visit the blog →",
-    footer_promo:"Partner code:",
+    promo_shop:"Discover the FitLine shop",
     footer_disclaimer:"Independent FitLine® / PM-International partner. This is not an official brand website. Product information is provided for informational purposes and does not replace medical advice."
   },
   es:{
@@ -1080,7 +1079,7 @@ const T = {
     team_challenge:"En 90 días, mirarás atrás y te preguntarás por qué no empezaste antes.",
     team_cta:"Empieza hoy →",
     blog_tag:"El blog", blog_title:"¿Quieres ir más lejos?", blog_p:"Consejos, rutinas, recetas y lo que pasa entre bastidores: lo comparto todo en el blog Belle, zen et en forme.", blog_cta:"Descubrir el blog →",
-    footer_promo:"Código de socio:",
+    promo_shop:"Descubre la tienda FitLine",
     footer_disclaimer:"Partner independiente de FitLine® / PM-International. Este no es un sitio web oficial de la marca. La información de los productos se proporciona a título informativo y no sustituye el consejo médico."
   }
 };
@@ -1367,10 +1366,13 @@ function fillLinks(){
       : TEAM_LINK;
   });
   const bl=document.getElementById('blogLink'); if(bl) bl.href=BLOG;
-  const p2=document.getElementById('promoCode2');
-  if(p2){
-    if(PROMO_CODE){ p2.textContent=PROMO_CODE; p2.href=PROMO_LINK; }
-    else{ const line=p2.closest('.promo-reminder'); if(line) line.style.display='none'; }
+  const ps=document.getElementById('promoShop');
+  if(ps){
+    ps.href=PROMO_LINK;
+    // Sans lien, on retire la ligne : un lien mort en pied de page fait
+    // mage a l'integrite du site.
+    const line=ps.closest('.promo-reminder');
+    if(line) line.style.display=(PROMO_LINK && PROMO_LINK!=='#') ? '' : 'none';
   }
   const soc={igLink:INSTAGRAM, fbLink:FACEBOOK, msLink:MESSENGER,
              mailLink: CONTACT_EMAIL ? 'mailto:'+CONTACT_EMAIL : ''};

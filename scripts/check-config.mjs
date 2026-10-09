@@ -71,11 +71,10 @@ for (const name of ['CONTACT_LINK', 'PROMO_LINK', 'TEAM_LINK']) {
   const m = new RegExp('const ' + name + '\\s*=\\s*"([^"]*)"').exec(src);
   const v = m ? m[1].trim() : '';
   add(!!v && v !== '#', `${name} renseigne`,
-    v && v !== '#' ? v : 'encore a "#" : ce bouton ne mene nulle part');
+    v && v !== '#' ? v
+      : name === 'PROMO_LINK' ? 'vide : la ligne boutique du footer est masquee'
+      : 'encore a "#" : ce bouton ne mene nulle part');
 }
-const promo = (src.match(/const PROMO_CODE\s*=\s*"([^"]*)"/) || [, ''])[1].trim();
-add(!!promo, 'PROMO_CODE renseigne', promo || 'vide : le bloc de code promo est masque');
-
 const sponsor = (src.match(/const SPONSOR_ID\s*=\s*"([^"]*)"/) || [, ''])[1].trim();
 add(!!sponsor, 'SPONSOR_ID renseigne', sponsor || 'vide : tes liens FitLine n\'auront pas de parametre sponsor');
 

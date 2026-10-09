@@ -436,7 +436,7 @@ const heroFor = (lang) => (lang === 'fr' ? '' : '../') + 'img/' + stripped.hero;
    On ne peut pas les remplir a la place du proprietaire, mais on refuse de
    publier sans le dire. Avertissement et non erreur : le site doit rester
    deployable pendant que les liens sont renseignes. */
-const PLACEHOLDERS = ['CONTACT_LINK', 'PROMO_LINK', 'TEAM_LINK', 'PROMO_CODE'];
+const PLACEHOLDERS = ['CONTACT_LINK', 'PROMO_LINK', 'TEAM_LINK'];
 function checkPlaceholders() {
   const warn = [];
   for (const name of PLACEHOLDERS) {
@@ -505,13 +505,23 @@ for (const lang of LANGS) {
   // target="_blank" sur une ancre interne ouvre le site dans un nouvel onglet
   // au lieu de defiler jusqu'a la section. Les deux elements concernes sont
   // donc nettoyes au build quand leur constante est une ancre.
-  for (const [constName, id] of [['CONTACT_LINK', 'contact-link'], ['PROMO_LINK', 'promoCode2']]) {
+  for (const [constName, id] of [['CONTACT_LINK', 'contact-link']]) {
     const v = (new RegExp('const ' + constName + '\\s*=\\s*"([^"]*)"').exec(stripped.text) || [, ''])[1];
     if (!v.startsWith('#') || v === '#') continue;
     const re = new RegExp('(<a[^>]*class="[^"]*' + id + '[^"]*"[^>]*)');
     page = page.replace(re, (m, head) => head
       .replace(/\s*target="_blank"/g, '')
       .replace(/\s*rel="noopener"/g, ''));
+  }
+
+  // Liens externes : on resout l'URL au build. Sans cela, le HTML genere
+  // affiche un lien visible vers "#", qui ne marche que si le JavaScript
+  // s'execute.
+  const EXTERNAL = { promoShop: 'PROMO_LINK' };
+  for (const [id, constName] of Object.entries(EXTERNAL)) {
+    const v = (new RegExp('const ' + constName + '\\s*=\\s*"([^"]*)"').exec(stripped.text) || [, ''])[1];
+    if (!v || v === '#') continue;
+    page = page.replace(new RegExp(`(<a[^>]*id="${id}"[^>]*href=")[^"]*(")`), `$1${v}$2`);
   }
   if (lang !== 'fr') page = page.replace(/href="favicon\.png"/g, 'href="../favicon.png"');
 

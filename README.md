@@ -207,9 +207,9 @@ sans cela, un changement de langue la supprimerait et le problème reviendrait.
 
 ## Liens de vente à renseigner
 
-Quatre constantes en haut du script de `src/index.html` (ligne ~857) sont encore
-à `#` ou vides. Tant qu'elles le sont, `npm run build` le signale et
-`npm run check:config` les liste.
+Les constantes de liens sont en haut du script de `src/index.html` (ligne ~857).
+Toutes sont renseignées ; le build n'affiche plus d'avertissement. `npm run
+check:config` les vérifie avant chaque déploiement.
 
 Ce sont des **ancres internes**, pas des URL : elles valent `#questionnaire` et
 `#team`, pas `https://…`.
@@ -219,7 +219,13 @@ Ce sont des **ancres internes**, pas des URL : elles valent `#questionnaire` et
 | `CONTACT_LINK` → `#questionnaire` | le bouton « Écris-moi directement » de l'écran d'erreur, qui renvoie vers le formulaire |
 | `TEAM_LINK` → `#team` | le bouton « Rejoindre la Team » de l'en-tête |
 | `PROMO_LINK` | renseigné : `https://www.fitline.com/fr/fr-fr?sponsor=21156995` |
-| `PROMO_CODE` → à définir | le texte affiché ; le bloc footer est masqué tant que c'est vide |
+""
+Il n'y a pas de code promo à afficher : le pied de page porte un lien
+« Découvrir la boutique FitLine », qui mène à `PROMO_LINK` — ton URL partenaire.
+Si un jour tu as un vrai code promo à faire figurer, il faudra réintroduire une
+ligne de ce type.
+
+Son URL est résolue au build, donc le lien fonctionne même sans JavaScript.
 
 `PROMO_LINK` et `SPONSOR_ID` sont vérifiés ensemble au build : s'ils divergent,
 les visiteurs seraient attribués à un autre partenaire et les commissions
