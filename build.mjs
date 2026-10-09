@@ -22,9 +22,9 @@
    execute le JS, donc l'indexation n'en souffre pas.
 ------------------------------------------------------------------ */
 
-import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
-import { join } from 'node:path';
+import { join, resolve, relative } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
 
 const SRC = 'src/index.html';
@@ -86,6 +86,110 @@ function extractDictionary(src) {
 }
 
 const t = (dict, lang, key) => (dict[lang] && dict[lang][key] != null ? dict[lang][key] : null);
+
+/* ---------- extraction des images inline ----------
+
+   La source embarque 594 Ko d'images en base64, soit 63 % du fichier :
+   elles sont telechargees d'un bloc, jamais paresseusement, et dupliquees
+   dans chacune des 3 pages generees. On les sort en fichiers.
+
+   Le nom contient un hash court du contenu : l'URL ne change que si
+   l'image change, donc un cache longue duree reste sur, et un build sans
+   modification d'image ne regenere pas de nouveaux noms. */
+
+const IMG_TOKEN = '__BZF_IMG__';
+const IMG_EXT = { 'image/webp': 'webp', 'image/png': 'png', 'image/jpeg': 'jpg', 'image/svg+xml': 'svg' };
+
+/* Nom lisible deduit du contexte. Les ancres sont testees sur les ~700
+   caracteres qui precedent le blob ; elles sont uniques dans la source.
+   --logo-bzf-noir doit etre teste avant --logo-bzf. */
+const NAME_HINTS = [
+  [/\-\-logo-bzf-noir:url\('$/, 'logo-bzf-noir'],
+  [/\-\-logo-bzf:url\('$/, 'logo-bzf'],
+  [/\-\-whybg:url\('$/, 'why'],
+  [/<img id="heroImg"[^>]*src="$/, 'hero'],
+  [/<span class="logo-disc fit"><img[^>]*src="$/, 'logo-fitline'],
+  [/<div class="avatar"><img[^>]*src="$/, 'avatar'],
+];
+
+// FNV-1a : suffisant pour un nom de fichier, et sans dependance.
+function hash8(buf) {
+  let h = 0x811c9dc5;
+  for (const b of buf) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+
+function slug(s) {
+  return String(s).toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 28) || 'x';
+}
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Nom d'un produit : name:"X", ou name:{fr:"X",...} pour les noms traduits.
+const NAME_RE = /(?<![A-Za-z0-9_])name:(?:\{fr:")?\{?"([^"]+)"/g;
+
+/* Retire les data-URI de `text` et renvoie le texte remplace, l'ensemble des
+   fichiers a ecrire, et le chemin de l'image du hero pour le preload.
+   Chaque blob n'est ecrit qu'une fois, meme s'il apparait plusieurs fois. */
+function extractImages(text) {
+  const names = new Map();   // base64 -> nom de fichier
+  const files = new Map();   // nom de fichier -> octets
+  let out = '', last = 0, seq = 0, hero = null;
+  const re = /data:image\/([a-z+]+);base64,([A-Za-z0-9+/=]+)/g;
+  let m = re.exec(text);
+
+  while (m !== null) {
+    const [whole, mime, b64] = m;
+    const ext = IMG_EXT['image/' + mime];
+    const at = m.index; // conserve avant d'avancer le curseur
+    m = re.exec(text);
+    if (!ext) continue; // type inconnu : on laisse tel quel
+
+    if (!names.has(b64)) {
+      const before = text.slice(Math.max(0, at - 700), at);
+      let hint = null;
+      for (const [anchor, name] of NAME_HINTS) {
+        if (anchor.test(before)) { hint = name; break; }
+      }
+      if (!hint) hint = guessHint(text, whole, at) || ('img-' + (++seq));
+      const buf = Buffer.from(b64, 'base64');
+      const name = `${hint}-${hash8(buf)}.${ext}`;
+      names.set(b64, name);
+      files.set(name, buf);
+      if (hint === 'hero') hero = name;
+    }
+    // On emet un jeton plutot que le chemin final : le prefixe differe selon
+    // la langue (img/ sur la racine, ../img/ depuis /en/ et /es/) et il faut
+    // le poser au moment de generer chaque page, pas une fois pour toutes.
+    // Un remplacement par motif attraperait les attributs src/href mais pas
+    // les chaines JS ni les url(...) CSS : c'etait exactement le trou.
+    out += text.slice(last, at) + IMG_TOKEN + names.get(b64);
+    last = at + whole.length;
+  }
+  out += text.slice(last);
+  return { text: out, files, hero };
+}
+
+/* Les sections et les produits tirent leur nom de la donnee qui porte le blob :
+   const SECBG={"energie":"data:..." et { name:"Restorate", ..., img:"data:...". */
+function guessHint(text, whole, at) {
+  const sec = /const SECBG=\{(.*?)\}/.exec(text);
+  if (sec) {
+    for (const [, key, val] of sec[1].matchAll(/"([^"]+)":"([^"]+)"/g)) {
+      if (val === whole) return 'sec-' + slug(key);
+    }
+  }
+  // Pour un produit, on prend le nom le plus proche en amont de l'image.
+  // Un balayage paresseux sur tout le fichier serait faux : il traverserait
+  // la frontiere entre deux objets et nommerait une image d'apres un autre
+  // produit. Entre name: et img: il n'y a que url/hook/bullets, donc 400
+  // caracteres suffisent largement et ne debordent jamais sur l'objet suivant.
+  const before = text.slice(Math.max(0, at - 400), at);
+  const names = [...before.matchAll(NAME_RE)];
+  if (names.length) return 'produit-' + slug(names[names.length - 1][1]);
+  return null;
+}
 
 /* ---------- prerendu du texte statique ---------- */
 
@@ -152,7 +256,7 @@ function bakeText(html, dict, lang) {
 
 /* ---------- head ---------- */
 
-function buildHead(lang) {
+function buildHead(lang, hero) {
   const url = ORIGIN + ROUTE[lang];
   const img = `${ORIGIN}/og-${lang}.png`;
   const alt = dict_title(lang);
@@ -163,6 +267,9 @@ function buildHead(lang) {
     `<link rel="icon" href="favicon.png" type="image/png">`,
     `<link rel="apple-touch-icon" href="favicon.png">`,
   ];
+  // Le hero est au-dessus de la ligne de flottaison et porte fetchpriority :
+  // sans preload le navigateur ne le decouvrirait qu'apres le parsing du HTML.
+  if (hero) lines.push(`<link rel="preload" as="image" href="${hero}" fetchpriority="high">`);
   for (const l of LANGS) {
     lines.push(`<link rel="alternate" hreflang="${l}" href="${ORIGIN + ROUTE[l]}">`);
   }
@@ -245,17 +352,30 @@ function buildOg(lang, logoDataUri) {
 const src = readFileSync(SRC, 'utf8');
 const dict = runInNewContext('(' + extractDictionary(src) + ')');
 
+// Le logo sert a la fois au favicon et a la carte de partage : on le garde
+// en base64 le temps de ces deux usages, puis on retire toutes les images
+// de la page HTML.
 const logoMatch = src.match(/--logo-bzf:url\('(data:image\/png;base64,[^']+)'\)/);
 if (!logoMatch) throw new Error('Logo --logo-bzf introuvable dans ' + SRC);
 const logoDataUri = logoMatch[1];
 
+const stripped = extractImages(src);
+if (!stripped.hero) throw new Error('Image hero introuvable : le preload ne peut pas etre genere');
+
+mkdirSync(join(OUT, 'img'), { recursive: true });
 mkdirSync(join(OUT, 'en'), { recursive: true });
 mkdirSync(join(OUT, 'es'), { recursive: true });
 
+for (const [name, buf] of stripped.files) writeFileSync(join(OUT, 'img', name), buf);
+
+// Le hero est un chemin relatif : depuis /en/ et /es/ il faut remonter d'un cran.
+const heroFor = (lang) => (lang === 'fr' ? '' : '../') + 'img/' + stripped.hero;
+
 const problems = [];
+const writtenImgs = new Set();
 
 for (const lang of LANGS) {
-  let page = src
+  let page = stripped.text
     .replace(/<html lang="[a-z]+">/, `<html lang="${lang}">`)
     .replace(/<title>[\s\S]*?<\/title>\s*/, '')
     .replace(/<meta name="description"[^>]*>\s*/, '');
@@ -264,10 +384,50 @@ for (const lang of LANGS) {
   page = baked.html;
   if (baked.missing.length) problems.push(`${lang}: clés i18n absentes -> ${[...new Set(baked.missing)].join(', ')}`);
 
-  page = page.replace(/(<meta name="viewport"[^>]*>)/, (m) => `${m}\n${buildHead(lang)}`);
+  page = page.replace(/(<meta name="viewport"[^>]*>)/, (m) => `${m}\n${buildHead(lang, heroFor(lang))}`);
 
-  // Le lien vers /favicon.png est relatif : il se resout mal depuis /en/.
-  page = lang === 'fr' ? page : page.replace(/href="favicon\.png"/g, 'href="../favicon.png"');
+  // Les chemins d'images sont relatifs au document : sur /en/ et /es/ il
+  // faut remonter d'un cran, comme pour le favicon.
+  page = page.split(IMG_TOKEN).join(lang === 'fr' ? 'img/' : '../img/');
+  if (lang !== 'fr') page = page.replace(/href="favicon\.png"/g, 'href="../favicon.png"');
+
+  // Toute image citee, quel que soit son chemin, doit exister sur le disque.
+  // Quatre formes de reference coexistent, et aucune n'est optionnelle :
+  // attributs src/href, url(...) CSS, valeurs de l'objet SECBG, et chaines JS
+  // des produits (img:"..."). C'est ce controle qui garantit qu'aucune page ne
+  // sort avec une image cassee.
+  const refs = new Set();
+  const collect = (re, pick = (m) => m[1]) => {
+    for (const m of page.matchAll(re)) refs.add(pick(m));
+  };
+  collect(/(?:src|href)=["']([^"']+\.(?:webp|png|jpe?g))["']/g);
+  collect(/url\(['"]?([^'")]*\.(?:webp|png|jpe?g))/g);
+  collect(/"[^"]+"\s*:\s*"([^"]+\.(?:webp|png|jpe?g))"/g);   // SECBG et produit
+  collect(/\bimg\s*:\s*"([^"]+\.(?:webp|png|jpe?g))"/g);
+
+  // On resout chaque reference comme le navigateur le fera, depuis le
+  // repertoire de la page. Comparer seulement le NOM de fichier laissait
+  // passer un src="hero.webp" sans le dossier img/ : c'est precisement ce
+  // controle qui l'attrape maintenant.
+  const pageDir = resolve(lang === 'fr' ? OUT : join(OUT, lang));
+  const imgDir = resolve(OUT, 'img');
+  for (const ref of refs) {
+    // Le favicon n'est pas dans img/ : il est ecrit a part depuis le logo.
+    if (/favicon\.png$/.test(ref)) continue;
+    const name = relative(imgDir, resolve(pageDir, ref));
+    // On interroge le disque, pas la carte en memoire : une image listee mais
+    // non ecrite produirait sinon une page cassee avec un build au vert.
+    if (name.startsWith('..') || !stripped.files.has(name) || !existsSync(join(imgDir, name))) {
+      problems.push(`${lang}: image referencee non resolue -> ${ref}`);
+    } else {
+      writtenImgs.add(name);
+    }
+  }
+
+  // On ne vise que les images raster en base64 : la fleche du <select> est un
+  // SVG de 200 octets encode en URL, inline dans le CSS, et doit y rester.
+  if (/data:image\/(webp|png|jpe?g);base64,/.test(page)) problems.push(`${lang}: il reste une image raster en base64`);
+  if (!/<img id="heroImg"[^>]*fetchpriority="high"/.test(page)) problems.push(`${lang}: hero sans fetchpriority`);
 
   const outFile = join(OUT, 'index.html');
   writeFileSync(lang === 'fr' ? outFile : join(OUT, lang, 'index.html'), page);
@@ -306,6 +466,12 @@ writeFileSync(join(OUT, 'sitemap.xml'),
 
 writeFileSync(join(OUT, 'robots.txt'),
   `User-agent: *\nAllow: /\n\nSitemap: ${ORIGIN}/sitemap.xml\n`);
+
+// Une image ecrite mais jamais referencee signale un nom casse ou un blob
+// orphelin : dans les deux cas, on laisse un fichier inutile sur le disque.
+for (const name of stripped.files.keys()) {
+  if (!writtenImgs.has(name)) problems.push(`image ecrite jamais referencee -> ${name}`);
+}
 
 if (problems.length) {
   console.error('\nProblemes detectes :');

@@ -60,6 +60,29 @@ fichiers.
 Le build vérifie qu'il ne reste aucun élément i18n vide et échoue avec un code
 de sortie 1 sinon.
 
+### Images
+
+Les 30 images de la source sont écrites dans `dist/img/` avec un nom
+`produit-<nom>-<hash8>.<ext>`. Le hash dérive du contenu : l'URL ne change que
+si l'image change, donc un cache longue durée reste valable.
+
+Le hero est au-dessus de la ligne de flottaison : il reste `eager`, porte
+`fetchpriority="high"` et est préchargé dans le `<head>`. Les 23 autres images
+passent en `loading="lazy" decoding="async"`.
+
+Les 7 fonds de section (`SECBG`) restent chargés d'un bloc : ce sont des
+`background-image` CSS, que le navigateur ne sait pas charger paresseusement,
+et `renderNeeds()` crée les 7 sections d'un coup. Les repousser demanderait un
+`IntersectionObserver` qui bascule une variable CSS à l'entrée dans le
+viewport.
+
+Le build échoue si une seule image reste en base64, si une image est écrite
+sans être référencée, ou si une référence ne résout pas vers un fichier
+présent sur le disque.
+
+`src/index.html` n'est **pas** censé être ouvert tel quel : sans build, il
+n'a plus d'images. Utilise `npm run dev`.
+
 ## Déployer sur Netlify (gratuit)
 
 1. Créer un compte sur https://app.netlify.com et un fichier de clé API Resend sur https://resend.com.
