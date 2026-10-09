@@ -22,11 +22,13 @@ const RATE_MAX = 3;             // envois
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 
 // Origines autorisees. ALLOWED_ORIGINS remplace integralement cette liste.
+// Le site est heberge sur bellezenetenforme.netlify.app, couvert par le
+// suffixe .netlify.app ci-dessus.
+//
 // ATTENTION : toute origine non listee est rejetee SILENCIEUSEMENT (200, aucun
-// email). Si tu as un domaine custom, ajoute-le ici ou dans ALLOWED_ORIGINS,
-// sinon les vrais clients ne recoivent rien.
+// email). Si tu deplaces le site sur un domaine propre, ajoute-le ici ou dans
+// ALLOWED_ORIGINS, sinon tous les vrais clients seront coupes sans erreur.
 const DEFAULT_ORIGINS = [
-  'bellezenetenforme.fr', 'www.bellezenetenforme.fr',
   'localhost', '127.0.0.1',
   '.netlify.app', '.netlify.com',
 ];

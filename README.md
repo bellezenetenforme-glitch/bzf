@@ -114,6 +114,25 @@ présent sur le disque.
 `src/index.html` n'est **pas** censé être ouvert tel quel : sans build, il
 n'a plus d'images. Utilise `npm run dev`.
 
+## Le domaine du site
+
+Le domaine vit dans **`src/site.config.mjs`**, importé par le build et par les
+tests — une seule source de vérité. Il vaut par défaut
+`https://bellezenetenforme.netlify.app`.
+
+**Changer de domaine = poser `SITE_ORIGIN` dans le dashboard Netlify**, puis
+redéployer. Tout se régénère : `canonical`, `hreflang`, `og:url`, `sitemap.xml`,
+`robots.txt`, JSON-LD. Aucune ligne de code à toucher.
+
+> ⚠️ À ne pas confondre avec `bellezenetenforme.fr` : ce domaine est **un autre
+> site**, ton blog TYPO3. Tant que la vitrine est sur `netlify.app`, ne mets pas
+> ce domaine-là dans le canonical ni dans `ALLOWED_ORIGINS` — tu déclarerais à
+> Google que ton contenu est canonique chez quelqu'un d'autre.
+
+Un `canonical` sur un sous-domaine `netlify.app` est exact mais peu utile : les
+signaux d'autorité restent sur un domaine temporaire. Le jour où tu as un
+domaine propre, `SITE_ORIGIN` règle l'ensemble.
+
 ## Déployer sur Netlify (gratuit)
 
 1. Créer un compte sur https://app.netlify.com et un fichier de clé API Resend sur https://resend.com.

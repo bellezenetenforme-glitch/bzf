@@ -18,6 +18,9 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { resolve, relative } from 'node:path';
+import { SITE_ORIGIN } from '../src/site.config.mjs';
+
+const ORIGIN_RE = SITE_ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const DIST = new URL('../dist/', import.meta.url);
 let built = false;
@@ -56,7 +59,8 @@ test('chaque page a un head localise et unique', () => {
     titles.push(title);
     assert.match(p, new RegExp(`__BZF_LANG__="${lang}"`));
     const canonical = /rel="canonical" href="([^"]+)"/.exec(p)[1];
-    assert.ok(canonical.endsWith(lang === 'fr' ? '/' : `/${lang}/`), `${rel} : canonical ${canonical}`);
+    assert.equal(canonical, SITE_ORIGIN + (lang === 'fr' ? '/' : `/${lang}/`),
+      `${rel} : canonical ${canonical} au lieu de ${SITE_ORIGIN}`);
     seen.add(canonical);
   }
   assert.equal(seen.size, 3, 'les 3 canonical doivent differer');
@@ -67,8 +71,9 @@ test('les hreflang sont reciproques sur les 3 pages', () => {
   for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
     const p = page(rel);
     for (const l of ['fr', 'en', 'es']) {
-      assert.match(p, new RegExp(`hreflang="${l}" href="[^"]*bellezenetenforme\\.fr${l === 'fr' ? '/' : `/${l}/`}"`),
-        `${rel} : hreflang ${l} manquant ou incorrect`);
+      const attendu = SITE_ORIGIN + (l === 'fr' ? '/' : `/${l}/`);
+      assert.ok(p.includes(`hreflang="${l}" href="${attendu}"`),
+        `${rel} : hreflang ${l} ne pointe pas sur ${attendu}`);
     }
     assert.match(p, /hreflang="x-default"/, `${rel} : x-default manquant`);
   }
@@ -261,6 +266,8 @@ test('les liens externes gardent target et rel', () => {
 });
 
 test('sitemap et robots pointent vers le bon domaine', () => {
-  assert.match(page('sitemap.xml'), /<loc>https:\/\/bellezenetenforme\.fr\/<\/loc>/);
-  assert.match(page('robots.txt'), /Sitemap: https:\/\/bellezenetenforme\.fr\/sitemap\.xml/);
+  assert.ok(page('sitemap.xml').includes(`<loc>${SITE_ORIGIN}/</loc>`),
+    "sitemap : l'URL du site ne correspond pas a SITE_ORIGIN");
+  assert.ok(page('robots.txt').includes(`Sitemap: ${SITE_ORIGIN}/sitemap.xml`),
+    "robots.txt : l'URL du site ne correspond pas a SITE_ORIGIN");
 });

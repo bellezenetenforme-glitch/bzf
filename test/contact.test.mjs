@@ -13,7 +13,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { handler } from '../netlify/functions/contact.mjs';
 
-const OK_ORIGIN = 'https://bellezenetenforme.fr';
+const OK_ORIGIN = 'https://bellezenetenforme.netlify.app';
 
 let seq = 0;
 /* Une IP distincte par requete : chaque test a son propre seau de rate limit. */
@@ -87,7 +87,7 @@ test('_t absent ou invalide : 200 sans envoi', async () => {
 test('origines hors liste : 200 sans envoi', async () => {
   assert.equal(await status(ev({ origin: null, body: valid() })), 200);           // ni Origin ni Referer
   assert.equal(await status(ev({ origin: 'https://evil.example', body: valid() })), 200);
-  assert.equal(await status(ev({ origin: 'https://bellezenetenforme.fr.evil.com', body: valid() })), 200);
+  assert.equal(await status(ev({ origin: 'https://bellezenetenforme.netlify.app.evil.com', body: valid() })), 200);
   assert.equal(await status(ev({ origin: 'pas-une-url', body: valid() })), 200);
 });
 
@@ -95,7 +95,7 @@ test('origines hors liste : 200 sans envoi', async () => {
 
 test('origines de reference acceptees', async () => {
   assert.equal(await status(ev({ origin: OK_ORIGIN, body: valid() })), CONFIGURE);
-  assert.equal(await status(ev({ origin: 'https://www.bellezenetenforme.fr', body: valid() })), CONFIGURE);
+  assert.equal(await status(ev({ origin: 'https://deploy-preview-7.netlify.app', body: valid() })), CONFIGURE);
   assert.equal(await status(ev({ origin: 'https://deploy-preview-12.netlify.app', body: valid() })), CONFIGURE);
   assert.equal(await status(ev({ origin: 'http://localhost:8888', body: valid() })), CONFIGURE);
 });

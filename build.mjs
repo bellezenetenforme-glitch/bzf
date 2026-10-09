@@ -26,11 +26,14 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 
 import { runInNewContext } from 'node:vm';
 import { join, resolve, relative } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
+import { SITE_ORIGIN } from './src/site.config.mjs';
 
 const SRC = 'src/index.html';
 const OUT = 'dist';
 const FONT_DIR = 'src/fonts';
-const ORIGIN = 'https://bellezenetenforme.fr';
+// Domaine du site, dans src/site.config.mjs (partage avec les tests).
+// Changer de domaine = poser SITE_ORIGIN dans le dashboard Netlify.
+const ORIGIN = SITE_ORIGIN;
 
 const LANGS = ['fr', 'en', 'es'];
 const ROUTE = { fr: '/', en: '/en/', es: '/es/' };
