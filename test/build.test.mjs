@@ -164,6 +164,47 @@ test('les cartes de partage existent', () => {
   }
 });
 
+test('le terme cible et la ville sont dans les trois langues', () => {
+  const KEYWORD = { fr: 'nutrition', en: 'nutrition', es: 'nutrición' };
+  const CITY = { fr: 'Tours', en: 'Tours', es: 'Tours' };
+  for (const [rel, lang] of [['index.html', 'fr'], ['en/index.html', 'en'], ['es/index.html', 'es']]) {
+    const p = page(rel);
+    const title = /<title>([^<]*)<\/title>/.exec(p)[1];
+    const desc = /<meta name="description" content="([^"]*)"/.exec(p)[1];
+    const blob = (title + ' ' + desc).toLowerCase();
+    assert.match(blob, new RegExp(KEYWORD[lang]), `${rel} : terme cible absent`);
+    assert.match(blob, new RegExp(CITY[lang].toLowerCase()), `${rel} : ville absente`);
+    // Le titre est le signal local le plus fort : la ville doit y etre aussi,
+    // pas seulement dans la description.
+    assert.match(title.toLowerCase(), new RegExp(CITY[lang].toLowerCase()), `${rel} : ville absente du titre`);
+  }
+});
+
+test('donnees structurelees valides et locales', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(p);
+    assert.ok(m, `${rel} : JSON-LD absent`);
+
+    let data;
+    try { data = JSON.parse(m[1]); }
+    catch (e) { assert.fail(`${rel} : JSON-LD invalide — ${e.message}`); }
+
+    assert.equal(data['@context'], 'https://schema.org');
+    assert.equal(data['@type'], 'HealthAndBeautyBusiness');
+    const served = data.areaServed.map((a) => a.name);
+    assert.ok(served.includes('Tours'), `${rel} : Tours absent de areaServed`);
+    assert.ok(served.includes('Indre-et-Loire'), `${rel} : Indre-et-Loire absent de areaServed`);
+
+    // On ne declare pas d'adresse : c'est un site vitrine sans local.
+    assert.equal(data.address, undefined, `${rel} : adresse declaree alors qu'il n'y en a pas`);
+    // Les URL publiques doivent correspondre au canonical de la page.
+    const canonical = /rel="canonical" href="([^"]+)"/.exec(p)[1];
+    assert.equal(data.url, canonical, `${rel} : url JSON-LD != canonical`);
+    assert.ok(data.sameAs.length >= 2, `${rel} : profils sociaux manquants`);
+  }
+});
+
 test('sitemap et robots pointent vers le bon domaine', () => {
   assert.match(page('sitemap.xml'), /<loc>https:\/\/bellezenetenforme\.fr\/<\/loc>/);
   assert.match(page('robots.txt'), /Sitemap: https:\/\/bellezenetenforme\.fr\/sitemap\.xml/);

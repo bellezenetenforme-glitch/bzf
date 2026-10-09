@@ -48,16 +48,16 @@ const OG = {
 // Titres et descriptions par langue, pour la recherche et les liens.
 const SEO = {
   fr: {
-    title: 'BZF — Nutrition et bien-être | Conseil FitLine personnalisé',
-    desc: 'Steff, partenaire indépendante, te conseille en nutrition et bien-être : une routine de produits adaptée à ton objectif. Réponds en 2 minutes.',
+    title: 'BZF — Nutrition et bien-être à Tours | Conseils FitLine',
+    desc: 'Steff, partenaire indépendante à Tours (Indre-et-Loire), te conseille en nutrition et bien-être : une routine adaptée à ton objectif. Réponds en 2 minutes.',
   },
   en: {
-    title: 'BZF — Nutrition and wellness | Personalised FitLine advice',
-    desc: 'Steff, an independent FitLine partner, guides you on nutrition and wellness with a routine matched to your goal. Take the 2-minute quiz.',
+    title: 'BZF — Nutrition and wellness in Tours | FitLine advice',
+    desc: 'Steff, an independent FitLine partner in Tours, guides you on nutrition and wellness with a routine matched to your goal. Take the 2-minute quiz.',
   },
   es: {
-    title: 'BZF — Nutrición y bienestar | Consejo FitLine a medida',
-    desc: 'Steff, partner independiente de FitLine, te guía en nutrición y bienestar con una rutina según tu objetivo. Rellena el cuestionario en 2 minutos.',
+    title: 'BZF — Nutrición y bienestar en Tours | Consejo FitLine',
+    desc: 'Steff, partner independiente de FitLine en Tours, te guía en nutrición y bienestar con una rutina según tu objetivo. Rellena el cuestionario en 2 minutos.',
   },
 };
 
@@ -269,6 +269,43 @@ function bakeText(html, dict, lang) {
   return { html, missing };
 }
 
+/* ---------- zone desservie et donnees structurelees ----------
+
+   Ce n'est PAS une adresse physique : Steff travaille en direct, depuis
+   Tours et les communes du 37. On ne declare donc aucune adresse, seulement
+   la zone reellement couvree. */
+const AREA = { city: 'Tours', region: 'Indre-et-Loire', regionCode: 'FR-37' };
+
+/* Les reseaux viennent des constantes de la page : une seule source de
+   verite, plutot qu'une recopie qui derivationait. */
+function siteProfiles() {
+  const get = (n) => (new RegExp('const ' + n + '\\s*=\\s*"([^"]*)"').exec(src) || [, ''])[1];
+  return { instagram: get('INSTAGRAM'), facebook: get('FACEBOOK'), messenger: get('MESSENGER') };
+}
+
+/* HealthAndBeautyBusiness couvre le conseil nutrition et bien-etre. Sans
+   adresse, Google n'affichera pas de fiche locale enrichie : c'est un
+   choix, pas un oubli — declarer une adresse de domicile sur un site
+   vitrine releve de la vie privee. */
+function jsonLd(lang) {
+  const prof = siteProfiles();
+  const data = {
+    '@context': 'https://schema.org',
+    '@type': 'HealthAndBeautyBusiness',
+    '@id': ORIGIN + ROUTE[lang] + '#bzf',
+    name: 'BZF — Belle, zen et en forme',
+    url: ORIGIN + ROUTE[lang],
+    description: SEO[lang].desc,
+    email: (new RegExp('const CONTACT_EMAIL\\s*=\\s*"([^"]*)"').exec(src) || [, ''])[1],
+    areaServed: [
+      { '@type': 'City', name: AREA.city },
+      { '@type': 'AdministrativeArea', name: AREA.region },
+    ],
+    sameAs: [prof.instagram, prof.facebook, prof.messenger].filter(Boolean),
+  };
+  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`;
+}
+
 /* ---------- head ---------- */
 
 function buildHead(lang, hero) {
@@ -305,6 +342,7 @@ function buildHead(lang, hero) {
     `<meta name="twitter:title" content="${esc(SEO[lang].title)}">`,
     `<meta name="twitter:description" content="${esc(SEO[lang].desc)}">`,
     `<meta name="twitter:image" content="${img}">`,
+    jsonLd(lang),
     // La langue de la page est injectee ici : detectLang() la privilegie
     // a localStorage, sinon un visiteur FR arrivant sur /en/ se verrait
     // rebascule en francais et les hreflang pointeraient vers du francais.

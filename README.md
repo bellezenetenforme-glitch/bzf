@@ -177,7 +177,25 @@ de partenaire locale ne se positionnera pas dessus. Ils apportent la pertinence,
 pas le trafic. Le trafic viendra du local (nom de la ville, « près de chez
 moi ») et des intentions longues que les clientes tapent réellement — un
 complément pour le sommeil, une routine fatigue, un avis sur un produit précis.
-Si tu me donnes ta zone géographique, j'ajoute le qualificatif local.
+Le qualificatif local est en place : **Tours (Indre-et-Loire)**, dans les trois
+langues.
+
+### Données structurées
+
+Chaque page porte un `HealthAndBeautyBusiness` en JSON-LD, avec la zone
+desservie (Tours, Indre-et-Loire) et les profils sociaux repris des constantes
+de la page.
+
+**Aucune adresse n'est déclarée.** Steff travaille en direct : publier son
+domicile sur un site vitrine relève de la vie privée. Google n'affichera donc pas
+de fiche locale enrichie avec adresse ni horaires. Si un jour tu veux cette
+fiche, c'est un choix à faire consciemment.
+
+Pour aller plus loin en SEO local, deux leviers restent :
+- une page ou une section **par commune** du 37 (Saint-Cyr-sur-Loire, Joué-lès-
+  Tours, Amboise…) avec son propre texte : Google aime la proximité nommée ;
+- une inscription **Google Business Profile**, qui pèse plus que n'importe quelle
+  balise sur une recherche « nutrition + Tours ».
 
 ## Anti-spam
 
