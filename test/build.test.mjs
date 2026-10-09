@@ -265,6 +265,35 @@ test('les liens externes gardent target et rel', () => {
   }
 });
 
+test('les listes de choix sont identiques en nombre dans les 3 langues', () => {
+  // Une option retiree ou ajoutee dans une seule langue produirait un
+  // questionnaire qui ne pose pas la meme question selon la page.
+  const LISTS = ['sport_opts', 'diet_opts', 'supp_opts', 'budget_opts', 'channel_opts'];
+  const counts = {};
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    counts[rel] = {};
+    for (const key of LISTS) {
+      const m = new RegExp(`data-i18n-opts="${key}">([\\s\\S]*?)</select>`).exec(p);
+      assert.ok(m, `${rel} : ${key} introuvable`);
+      counts[rel][key] = (m[1].match(/<option>/g) || []).length;
+    }
+  }
+  for (const key of LISTS) {
+    const vals = Object.values(counts).map((c) => c[key]);
+    assert.equal(new Set(vals).size, 1,
+      `${key} : ${vals.join('/')} options selon la langue — le questionnaire ne pose pas la meme question`);
+  }
+});
+
+test('le canal de contact ne propose plus Email', () => {
+  for (const rel of ['index.html', 'en/index.html', 'es/index.html']) {
+    const p = page(rel);
+    const m = /data-i18n-opts="channel_opts">([\s\S]*?)<\/select>/.exec(p);
+    assert.doesNotMatch(m[1], /Email/i, `${rel} : l'option Email est toujours proposee`);
+  }
+});
+
 test('sitemap et robots pointent vers le bon domaine', () => {
   assert.ok(page('sitemap.xml').includes(`<loc>${SITE_ORIGIN}/</loc>`),
     "sitemap : l'URL du site ne correspond pas a SITE_ORIGIN");
