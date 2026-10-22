@@ -445,7 +445,7 @@ test('la reco produits est branchee sur le mail et pas laissee vide', () => {
     'le bloc de recommandation produits a disparu du mail');
 });
 
-test('tous les besoins du questionnaire ont une recommandation, sauf "rien"', () => {
+test('tous les besoins du questionnaire ont une recommandation', () => {
   // Un besoin coche sans correspondance produirait un mail sans produit :
   // la visiteuse aurait coche une case pour rien. On verifie la couverture
   // dans les trois langues, besoin par besoin.
@@ -463,8 +463,9 @@ test('tous les besoins du questionnaire ont une recommandation, sauf "rien"', ()
   // Chaque entree porte ses trois libelles dans l'ordre fr, en, es.
   const parLangue = [0, 1, 2].map((k) => new Set(labels.map((l) => l[k]).filter(Boolean)));
 
-  // "Rien de particulier" est la case fourre-tout : elle ne declenche rien.
-  const SANS_RECO = ['Rien de particulier', 'Nothing specific', 'Nada en particular'];
+  // La case fourre-tout a ete retiree du questionnaire : plus aucun besoin
+  // n'est dans le droit de ne declencher aucune recommandation.
+  const SANS_RECO = [];
 
   for (const [i, besoins] of listes.entries()) {
     for (const b of besoins) {
@@ -472,6 +473,16 @@ test('tous les besoins du questionnaire ont une recommandation, sauf "rien"', ()
       assert.ok(parLangue[i].has(b),
         `besoin "${b}" (langue ${i}) sans recommandation produit`);
     }
+  }
+});
+
+test('la case fourre-tout a disparu du questionnaire', () => {
+  // "Rien de particulier" ne declencheait aucune recommandation : une
+  // visiteuse qui la coche ne recevait qu'un mail vide de produits.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  for (const libelle of ['Rien de particulier', 'Nothing specific', 'Nada en particular']) {
+    assert.doesNotMatch(src, new RegExp(`"${libelle}"`),
+      `l'option "${libelle}" est toujours proposee`);
   }
 });
 
