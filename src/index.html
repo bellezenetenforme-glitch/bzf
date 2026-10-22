@@ -740,12 +740,6 @@
       <div class="field"><label id="lblf_goal" data-i18n="f_goal"></label>
         <div class="chips" id="goalChips" role="group" aria-labelledby="lblf_goal" data-i18n-chips="goal_opts"></div></div>
 
-      <div class="field"><label for="activiteSel" data-i18n="f_activity"></label>
-        <select name="activite" id="activiteSel" data-i18n-opts="sport_opts"></select></div>
-
-      <div class="field" id="activiteWrap" hidden><label for="fActiviteWhich" data-i18n="f_activity_which"></label>
-        <input type="text" id="fActiviteWhich" name="activite_type" data-i18n-ph="act_which_ph"></div>
-
       <div class="field"><label id="lblf_moment" data-i18n="f_moment"></label>
         <div class="chips" id="momentChips" role="group" aria-labelledby="lblf_moment" data-i18n-chips="moment_opts"></div></div>
 
@@ -754,6 +748,12 @@
 
       <div class="field"><label for="fAlimentation" data-i18n="f_diet"></label>
         <select id="fAlimentation" name="alimentation" data-i18n-opts="diet_opts"></select></div>
+
+      <div class="field"><label for="activiteSel" data-i18n="f_activity"></label>
+        <select name="activite" id="activiteSel" data-i18n-opts="sport_opts"></select></div>
+
+      <div class="field" id="activiteWrap" hidden><label for="fActiviteWhich" data-i18n="f_activity_which"></label>
+        <input type="text" id="fActiviteWhich" name="activite_type" data-i18n-ph="act_which_ph"></div>
 
       <div class="field"><label for="fSignalements" data-i18n="f_health"></label>
         <textarea id="fSignalements" name="signalements" data-i18n-ph="f_health_ph"></textarea></div>
@@ -916,15 +916,15 @@ const T = {
     f_name:"Prénom", f_name_ph:"Ton prénom", f_age:"Âge", f_age_ph:"Ton âge",
     f_goal:"Quel est ton objectif ?",
     goal_opts:["Plus d'énergie","Santé féminine","Mieux dormir","Objectif shape","Mon glow"],
-    f_activity:"Pratiques-tu une activité physique régulière ?",
-    sport_opts:["Non, aucune","Oui, activité physique (marche, vélo, yoga...)","Oui, sport (pilates, natation, zumba...)","Oui, les deux"],
-    f_activity_which:"Précise ton activité ou ton sport", act_which_ph:"Pilates, natation, zumba, marche...",
     f_moment:"Tu aimerais un coup de pouce à quel moment ?",
     moment_opts:["Le matin (énergie, concentration)","Le soir (récupération, sommeil)","Toute la journée (poids, minceur)"],
     f_needs:"Dans quoi te reconnais-tu ?",
-    needs_opts:["Fatigue / manque d'énergie","Difficultés de concentration","Mauvais sommeil / difficultés d'endormissement","Digestion difficile / ballonnements","Système immunitaire fragile","Peau terne / manque d'éclat","Chute de cheveux / cheveux fragiles","Envies de sucre / grignotages","Rétention d'eau / sensation de lourdeur","Douleurs articulaires ou musculaires","Stress / nervosité","Manque de récupération après l'effort","Circulation sanguine / jambes lourdes","Rien de particulier"],
+    needs_opts:["Fatigue / manque d'énergie","Difficultés de concentration","Digestion difficile / ballonnements","Système immunitaire fragile","Peau terne / manque d'éclat","Chute de cheveux / cheveux fragiles","Envies de sucre / grignotages","Rétention d'eau / sensation de lourdeur","Douleurs articulaires ou musculaires","Stress / nervosité","Circulation sanguine / jambes lourdes","Kilos en trop","Bouée au ventre / graisse abdominale","Cellulite","Mauvais sommeil / insomnie","Vieillissement cutané","Perte de fermeté peau","Tâches pigmentaires / acné","Pré(ménopause) / symptômes hormonaux","Rien de particulier"],
     f_diet:"Comment manges-tu au quotidien ?",
-    diet_opts:["Équilibré la plupart du temps","Pas terrible, je mange ce que je peux","Je fais attention (régime ou objectif précis)","Végétarienne / vegan"],
+    diet_opts:["Équilibré la plupart du temps","Pas terrible, je mange ce que je peux","Je fais attention (régime ou objectif précis)","Trop sucré / grignotages"],
+    f_activity:"Pratiques-tu une activité physique régulière ?",
+    sport_opts:["Non, aucune","Oui, activité physique (marche, vélo, yoga...)","Oui, sport (pilates, natation, zumba...)","Oui, les deux"],
+    f_activity_which:"Précise ton activité ou ton sport", act_which_ph:"Pilates, natation, zumba, marche...",
     f_health:"Pathologies, allergies ou traitements à me signaler ?",
     f_health_ph:"Sensibilité à la caféine, allergie au gluten, traitement en cours... ou rien de particulier",
     f_supp:"Prends-tu déjà des compléments ?",
@@ -985,15 +985,15 @@ const T = {
     f_name:"First name", f_name_ph:"Your first name", f_age:"Age", f_age_ph:"Your age",
     f_goal:"What's your goal?",
     goal_opts:["More energy","Women's health","Better sleep","Shape goals","My glow"],
-    f_activity:"Do you exercise regularly?",
-    sport_opts:["No, none","Yes, physical activity (walking, cycling, yoga...)","Yes, sport (pilates, swimming, zumba...)","Yes, both"],
-    f_activity_which:"Tell me your activity or sport", act_which_ph:"Pilates, swimming, zumba, walking...",
     f_moment:"When do you want a boost?",
     moment_opts:["Morning (energy, focus)","Evening (recovery, sleep)","All day (weight, slimming)"],
     f_needs:"What sounds like you?",
-    needs_opts:["Fatigue / lack of energy","Difficulty focusing","Poor sleep / trouble falling asleep","Difficult digestion / bloating","Weak immune system","Dull skin / lack of glow","Hair loss / brittle hair","Sugar cravings / snacking","Water retention / feeling heavy","Joint or muscle pain","Stress / anxiety","Poor recovery after exercise","Poor circulation / heavy legs","Nothing specific"],
+    needs_opts:["Fatigue / lack of energy","Difficulty focusing","Difficult digestion / bloating","Weak immune system","Dull skin / lack of glow","Hair loss / brittle hair","Sugar cravings / snacking","Water retention / feeling heavy","Joint or muscle pain","Stress / anxiety","Poor circulation / heavy legs","Extra kilos","Belly fat / abdominal fat","Cellulite","Poor sleep / insomnia","Skin ageing","Loss of skin firmness","Pigmentation spots / acne","Premenopause / hormonal symptoms","Nothing specific"],
     f_diet:"How do you eat day to day?",
-    diet_opts:["Balanced most of the time","Not great, I eat what I can","I watch what I eat (diet or specific goal)","Vegetarian-vegan"],
+    diet_opts:["Balanced most of the time","Not great, I eat what I can","I watch what I eat (diet or specific goal)","Too sweet / snacking"],
+    f_activity:"Do you exercise regularly?",
+    sport_opts:["No, none","Yes, physical activity (walking, cycling, yoga...)","Yes, sport (pilates, swimming, zumba...)","Yes, both"],
+    f_activity_which:"Tell me your activity or sport", act_which_ph:"Pilates, swimming, zumba, walking...",
     f_health:"Any conditions, allergies or treatments I should know about?",
     f_health_ph:"Caffeine sensitivity, gluten allergy, ongoing treatment... or nothing specific",
     f_supp:"Do you already take supplements?",
@@ -1054,15 +1054,15 @@ const T = {
     f_name:"Nombre", f_name_ph:"Tu nombre", f_age:"Edad", f_age_ph:"Tu edad",
     f_goal:"¿Cuál es tu objetivo?",
     goal_opts:["Más energía","Salud femenina","Dormir mejor","Objetivo shape","Mi glow"],
-    f_activity:"¿Haces actividad física regular?",
-    sport_opts:["No, ninguna","Sí, actividad física (caminar, bici, yoga...)","Sí, deporte (pilates, natación, zumba...)","Sí, ambos"],
-    f_activity_which:"Especifica tu actividad o deporte", act_which_ph:"Pilates, natación, zumba, caminar...",
     f_moment:"¿En qué momento quieres un empujón?",
     moment_opts:["Por la mañana (energía, concentración)","Por la noche (recuperación, sueño)","Todo el día (peso, adelgazamiento)"],
     f_needs:"¿En qué te reconoces?",
-    needs_opts:["Fatiga / falta de energía","Dificultad para concentrarse","Mal sueño / dificultad para dormirse","Digestión difícil / hinchazón","Sistema inmunológico débil","Piel apagada / falta de brillo","Caída del cabello / cabello frágil","Antojos de azúcar / picoteo","Retención de líquidos / sensación de pesadez","Dolores articulares o musculares","Estrés / nerviosismo","Mala recuperación después del esfuerzo","Mala circulación / piernas pesadas","Nada en particular"],
+    needs_opts:["Fatiga / falta de energía","Dificultad para concentrarse","Digestión difícil / hinchazón","Sistema inmunológico débil","Piel apagada / falta de brillo","Caída del cabello / cabello frágil","Antojos de azúcar / picoteo","Retención de líquidos / sensación de pesadez","Dolores articulares o musculares","Estrés / nerviosismo","Mala circulación / piernas pesadas","Kilos de más","Barriga / grasa abdominal","Celulitis","Mal sueño / insomnio","Envejecimiento de la piel","Pérdida de firmeza de la piel","Manchas de pigmentación / acné","Premenopausia / síntomas hormonales","Nada en particular"],
     f_diet:"¿Cómo comes en el día a día?",
-    diet_opts:["Equilibrado la mayor parte del tiempo","No muy bien, como lo que puedo","Cuido lo que como (dieta u objetivo)","Vegetariana / vegana"],
+    diet_opts:["Equilibrado la mayor parte del tiempo","No muy bien, como lo que puedo","Cuido lo que como (dieta u objetivo)","Demasiado dulce / picoteo"],
+    f_activity:"¿Haces actividad física regular?",
+    sport_opts:["No, ninguna","Sí, actividad física (caminar, bici, yoga...)","Sí, deporte (pilates, natación, zumba...)","Sí, ambos"],
+    f_activity_which:"Especifica tu actividad o deporte", act_which_ph:"Pilates, natación, zumba, caminar...",
     f_health:"¿Patologías, alergias o tratamientos que deba saber?",
     f_health_ph:"Sensibilidad a la cafeína, alergia al gluten, tratamiento en curso... o nada en particular",
     f_supp:"¿Ya tomas complementos?",
@@ -1536,6 +1536,131 @@ if(activiteSel) activiteSel.addEventListener('change',syncActivite);
 
 function chipsOf(id){ return [...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.textContent.trim()); }
 
+/* ============================================================
+   4b. RECOMMANDATION PRODUITS — besoin coche -> produits
+   ------------------------------------------------------------
+   Le catalogue (CATEGORIES) fait foi pour les arguments produits :
+   on n'ecrit aucune promesse nouvelle, on reutilise les bullets deja
+   ecrits pour chaque produit.
+
+   Les besoins remontes par le formulaire sont du texte (le libelle de
+   la puce cochee). On reconnait donc un besoin par son libelle, dans
+   les trois langues : si un libelle change dans needs_opts, il faut
+   le changer ici aussi — le test build.test.mjs le verifie.
+
+   Le bloc produit ne part que des besoins qui ont une correspondance
+   ci-dessous : sans correspondance, le mail reste exactement ce
+   qu'il etait.
+   ============================================================ */
+const NEED_RECO = [
+  { need:"Fatigue / manque d'énergie",
+    labels:["Fatigue / manque d'énergie","Fatigue / lack of energy","Fatiga / falta de energía"],
+    products:["Activize Oxyplus — Fruits rouges","Power Cocktail","Créatine+"] },
+  { need:"Difficultés de concentration",
+    labels:["Difficultés de concentration","Difficulty focusing","Dificultad para concentrarse"],
+    products:["Activize Oxyplus — Fruits rouges","Créatine+","Power Cocktail"] },
+  { need:"Digestion difficile / ballonnements",
+    labels:["Digestion difficile / ballonnements","Difficult digestion / bloating","Digestión difícil / hinchazón"],
+    products:["D-Drink","Power Cocktail","Basen"] },
+  { need:"Système immunitaire fragile",
+    labels:["Système immunitaire fragile","Weak immune system","Sistema inmunológico débil"],
+    products:["Power Cocktail","Restorate"] },
+  { need:"Peau terne / manque d'éclat",
+    labels:["Peau terne / manque d'éclat","Dull skin / lack of glow","Piel apagada / falta de brillo"],
+    products:["Sérum","Beauty (Collagène)"] },
+  { need:"Chute de cheveux / cheveux fragiles",
+    labels:["Chute de cheveux / cheveux fragiles","Hair loss / brittle hair","Caída del cabello / cabello frágil"],
+    products:["Beauty (Collagène)","4ever"] },
+  { need:"Envies de sucre / grignotages",
+    labels:["Envies de sucre / grignotages","Sugar cravings / snacking","Antojos de azúcar / picoteo"],
+    products:["C-Balance","TopShape","ProShape Shaker"] },
+  { need:"Rétention d'eau / sensation de lourdeur",
+    labels:["Rétention d'eau / sensation de lourdeur","Water retention / feeling heavy","Retención de líquidos / sensación de pesadez"],
+    products:["Munogen","D-Drink"] },
+  { need:"Douleurs articulaires ou musculaires",
+    labels:["Douleurs articulaires ou musculaires","Joint or muscle pain","Dolores articulares o musculares"],
+    products:["Gelenk-Fit","Basen","Créatine+"] },
+  { need:"Stress / nervosité",
+    labels:["Stress / nervosité","Stress / anxiety","Estrés / nerviosismo"],
+    products:["Basen","Restorate"] },
+  { need:"Circulation sanguine / jambes lourdes",
+    labels:["Circulation sanguine / jambes lourdes","Poor circulation / heavy legs","Mala circulación / piernas pesadas"],
+    products:["Munogen","Gelenk-Fit"] },
+  { need:"Kilos en trop",
+    labels:["Kilos en trop","Extra kilos","Kilos de más"],
+    products:["TopShape","C-Balance","ProShape Shaker"] },
+  { need:"Bouée au ventre / graisse abdominale",
+    labels:["Bouée au ventre / graisse abdominale","Belly fat / abdominal fat","Barriga / grasa abdominal"],
+    products:["TopShape","D-Drink"] },
+  { need:"Cellulite",
+    labels:["Cellulite","Cellulite","Celulitis"],
+    products:["D-Drink","Beauty (Collagène)","TopShape"] },
+  { need:"Mauvais sommeil / insomnie",
+    labels:["Mauvais sommeil / insomnie","Poor sleep / insomnia","Mal sueño / insomnio"],
+    products:["Restorate","Basen"] },
+  { need:"Vieillissement cutané",
+    labels:["Vieillissement cutané","Skin ageing","Envejecimiento de la piel"],
+    products:["4ever","Ultimate Young","Beauty (Collagène)"] },
+  { need:"Perte de fermeté peau",
+    labels:["Perte de fermeté peau","Loss of skin firmness","Pérdida de firmeza de la piel"],
+    products:["Beauty (Collagène)","Sérum","4ever"] },
+  { need:"Tâches pigmentaires / acné",
+    labels:["Tâches pigmentaires / acné","Pigmentation spots / acne","Manchas de pigmentación / acné"],
+    products:["Sérum","Beauty (Collagène)","Ultimate Young"] },
+  { need:"Pré(ménopause) / symptômes hormonaux",
+    labels:["Pré(ménopause) / symptômes hormonaux","Premenopause / hormonal symptoms","Premenopausia / síntomas hormonales"],
+    products:["Women+","Créatine+"] }
+];
+
+/* Nom affichable d'un produit : quelques noms sont des objets {fr,en,es}. */
+function productLabel(p){
+  if(!p) return '';
+  if(p.name && typeof p.name==='object') return p.name.fr || p.name.en || p.name.es || '';
+  return p.name || '';
+}
+/* Retrouve un produit du catalogue a partir de son nom. */
+function findProduct(label){
+  for(const c of CATEGORIES){
+    for(const p of c.products){
+      if(productLabel(p)===label) return p;
+      if(p.name && typeof p.name==='object' && Object.values(p.name).includes(label)) return p;
+    }
+  }
+  return null;
+}
+/* Plafond de produits listes dans le mail : au-dela, la liste devient
+   illisible et Steff doit de toute facon arbitrer avec le budget. */
+const RECO_MAX = 8;
+/* Bloc "RECOMMANDATION PRODUITS" ajoute au mail recu par Steff. */
+function buildReco(besoins){
+  const list = besoins || [];
+  const hits = NEED_RECO.filter(r => r.labels.some(l => list.includes(l)));
+  if(!hits.length) return '';
+  /* Un meme produit peut repondre a plusieurs besoins : on ne le liste
+     qu'une fois, avec tous les besoins qui le declenchent. */
+  const produits = [];
+  for(const h of hits){
+    for(const label of h.products){
+      const p = findProduct(label);
+      if(!p) continue;
+      const deja = produits.find(x => x.label === label);
+      if(deja) deja.besoins.push(h.need);
+      else produits.push({label:label, p:p, besoins:[h.need]});
+    }
+  }
+  const retenus = produits.slice(0, RECO_MAX);
+  let t='RECOMMANDATION PRODUITS\n━━━━━━━━━━━━━━━━━━━━━━\n';
+  for(const x of retenus){
+    t+='• '+productLabel(x.p)+' — '+shopUrl(x.p.url)+'\n';
+    t+='   Besoins : '+x.besoins.join(', ')+'\n';
+    for(const b of (x.p.bullets && x.p.bullets.fr) || []) t+='   - '+b+'\n';
+  }
+  if(produits.length > retenus.length){
+    t+='   ('+(produits.length-retenus.length)+' autre(s) produit(s) a prevoir selon le budget)\n';
+  }
+  return t;
+}
+
 function collectAnswers(){
   const fd=new FormData(form), o={};
   fd.forEach((v,k)=>o[k]=v);
@@ -1554,16 +1679,16 @@ function buildEmailBody(a, reco){
   t+='PROFIL CLIENT\n━━━━━━━━━━━━\n';
   t+='Prénom : '+L(a.prenom)+'\nÂge : '+L(a.age)+'\n\n';
   t+='OBJECTIFS\n━━━━━━━━━\n'+LI(a.objectifs)+'\n\n';
-  t+='ACTIVITÉ\n━━━━━━━━\nType : '+L(a.activite)+'\nPrécision : '+L(a.activite_type)+'\n\n';
   t+='MOMENTS CLÉS\n━━━━━━━━━━━━\n'+LI(a.moments)+'\n\n';
   t+='BESOINS IDENTIFIÉS\n━━━━━━━━━━━━━━━━━━\n'+LI(a.besoins)+'\n\n';
   t+='ALIMENTATION\n━━━━━━━━━━━━\n'+L(a.alimentation)+'\n\n';
+  t+='ACTIVITÉ\n━━━━━━━━\nType : '+L(a.activite)+'\nPrécision : '+L(a.activite_type)+'\n\n';
   t+='SANTÉ\n━━━━━\n'+L(a.signalements)+'\n\n';
   t+='COMPLÉMENTS ACTUELS\n━━━━━━━━━━━━━━━━━━━\n'+L(a.complements)+'\n\n';
   t+='BUDGET\n━━━━━━\n'+L(a.budget)+'\n\n';
   t+='CONTACT\n━━━━━━━\nMéthode : '+L(a.canal)+'\nCoordonnées : '+L(a.contact)+'\n\n';
   t+='Langue du formulaire : '+LANG.toUpperCase()+'\n';
-  if(reco) t+='\n'+reco+'\n';
+  if(reco) t+='\n'+reco;
   return t;
 }
 function buildSubject(a){
@@ -1637,7 +1762,7 @@ form.addEventListener('submit', async e=>{
   e.preventDefault();
   const a = collectAnswers();
   const subject = buildSubject(a);
-  const body    = buildEmailBody(a, null);
+  const body    = buildEmailBody(a, buildReco(a.besoins));
 
   submitBtn.disabled = true; submitBtn.classList.add('loading');
   const span = submitBtn.querySelector('span');

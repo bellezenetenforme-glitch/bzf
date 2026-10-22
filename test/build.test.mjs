@@ -392,3 +392,87 @@ test('sendToSteff distingue les echecs au lieu de tout reducing a false', () => 
       `raison "${reason}" jamais produite`);
   }
 });
+
+/* ---------- recommandation produits par besoin ---------- */
+
+test('chaque produit recommande existe dans le catalogue', () => {
+  // Un nom de produit mal orthographie disparaitrait de la reco sans
+  // laisser de trace : findProduct() renvoie null et le produit est
+  // purement et simplement saute. Le controle est donc sur la source.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const bloc = /const NEED_RECO\s*=\s*\[([\s\S]*?)\n\];/.exec(src);
+  assert.ok(bloc, 'NEED_RECO introuvable');
+
+  const noms = [...bloc[1].matchAll(/products:\[([^\]]*)\]/g)]
+    .flatMap((m) => m[1].split(',').map((s) => s.trim().replace(/^"|"$/g, '')).filter(Boolean));
+  assert.ok(noms.length >= 4, `seulement ${noms.length} produit(s) recommande(s), 4 attendus`);
+
+  for (const nom of noms) {
+    // Deux formes dans CATEGORIES : name:"TopShape" (chaine) ou
+    // name:{fr:"Sérum",en:"Serum",es:"Sérum"} (objet traduit).
+    assert.ok(src.includes(`name:"${nom}"`) || src.includes(`name:{fr:"${nom}"`),
+      `produit "${nom}" recommande mais absent de CATEGORIES`);
+  }
+});
+
+test('chaque libelle de besoin recommande existe dans les 3 langues', () => {
+  // Les besoins remontes par le formulaire sont du texte : la reco les
+  // reconnait par leur libelle. Un libelle renomme dans needs_opts
+  // casserait la correspondance silencieusement.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const bloc = /const NEED_RECO\s*=\s*\[([\s\S]*?)\n\];/.exec(src);
+  assert.ok(bloc, 'NEED_RECO introuvable');
+
+  const propositions = new Set(
+    [...src.matchAll(/needs_opts:\[([^\]]*)\]/g)]
+      .flatMap((m) => m[1].split(',').map((s) => s.trim().replace(/^"|"$/g, '')).filter(Boolean)));
+  assert.ok(propositions.size >= 16, `besoins_options : ${propositions.size} libelle(s), 16 attendus`);
+
+  const labels = [...bloc[1].matchAll(/labels:\[([^\]]*)\]/g)]
+    .flatMap((m) => m[1].split(',').map((s) => s.trim().replace(/^"|"$/g, '')).filter(Boolean));
+  assert.ok(labels.length >= 5, `seulement ${labels.length} libelle(s) de besoin, 5 attendus`);
+
+  for (const l of labels) {
+    assert.ok(propositions.has(l), `besoin "${l}" recommande mais absent de needs_opts`);
+  }
+});
+
+test('la reco produits est branchee sur le mail et pas laissee vide', () => {
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  assert.match(src, /buildEmailBody\(a,\s*buildReco\(a\.besoins\)\)/,
+    'buildEmailBody ne recoit plus la recommandation produits');
+  assert.match(src, /RECOMMANDATION PRODUITS/,
+    'le bloc de recommandation produits a disparu du mail');
+});
+
+test('tous les besoins du questionnaire ont une recommandation, sauf "rien"', () => {
+  // Un besoin coche sans correspondance produirait un mail sans produit :
+  // la visiteuse aurait coche une case pour rien. On verifie la couverture
+  // dans les trois langues, besoin par besoin.
+  const src = readFileSync(new URL('../src/index.html', import.meta.url), 'utf8');
+  const bloc = /const NEED_RECO\s*=\s*\[([\s\S]*?)\n\];/.exec(src);
+  assert.ok(bloc, 'NEED_RECO introuvable');
+
+  const labels = [...bloc[1].matchAll(/labels:\[([^\]]*)\]/g)]
+    .map((m) => m[1].split(',').map((s) => s.trim().replace(/^"|"$/g, '')).filter(Boolean));
+
+  const listes = [...src.matchAll(/needs_opts:\[([^\]]*)\]/g)]
+    .map((m) => m[1].split(',').map((s) => s.trim().replace(/^"|"$/g, '')).filter(Boolean));
+  assert.equal(listes.length, 3, `${listes.length} liste(s) de besoins, 3 attendues`);
+
+  // Chaque entree porte ses trois libelles dans l'ordre fr, en, es.
+  const parLangue = [0, 1, 2].map((k) => new Set(labels.map((l) => l[k]).filter(Boolean)));
+
+  // "Rien de particulier" est la case fourre-tout : elle ne declenche rien.
+  const SANS_RECO = ['Rien de particulier', 'Nothing specific', 'Nada en particular'];
+
+  for (const [i, besoins] of listes.entries()) {
+    for (const b of besoins) {
+      if (SANS_RECO.includes(b)) continue;
+      assert.ok(parLangue[i].has(b),
+        `besoin "${b}" (langue ${i}) sans recommandation produit`);
+    }
+  }
+});
+
+
