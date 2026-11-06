@@ -356,6 +356,12 @@ function buildHead(lang, hero) {
     // rebascule en francais et les hreflang pointeraient vers du francais.
     `<script>window.__BZF_LANG__=${JSON.stringify(lang)};</script>`,
   );
+  // Compteur de visites GoatCounter : injecte seulement si le code est
+  // fourni (env Netlify). Build local = HTML strictement inchangé.
+  const gc = (process.env.GOATCOUNTER_CODE || '').trim();
+  if (gc) {
+    lines.push(`<script data-goatcounter="https://${gc}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>`);
+  }
   return lines.join('\n');
 }
 

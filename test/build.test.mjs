@@ -486,4 +486,32 @@ test('la case fourre-tout a disparu du questionnaire', () => {
   }
 });
 
+test('goatcounter absent sans GOATCOUNTER_CODE', () => {
+  if (process.env.GOATCOUNTER_CODE) return; // env posée : non applicable
+  for (const f of ['index.html', 'en/index.html', 'es/index.html']) {
+    const html = page(f);
+    assert.ok(!html.includes('goatcounter'), `${f} ne doit pas porter goatcounter sans env`);
+    assert.ok(!html.includes('zgo.at'), `${f} ne doit pas référencer zgo.at sans env`);
+  }
+});
+
+test('goatcounter présent avec GOATCOUNTER_CODE, puis dist restauré', () => {
+  const cwd = new URL('..', import.meta.url).pathname;
+  try {
+    execFileSync('node', ['build.mjs'], {
+      cwd,
+      env: { ...process.env, GOATCOUNTER_CODE: 'bzftest' },
+    });
+    for (const f of ['index.html', 'en/index.html', 'es/index.html']) {
+      const html = page(f);
+      assert.ok(
+        html.includes('<script data-goatcounter="https://bzftest.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>'),
+        `${f} doit porter la balise goatcounter`,
+      );
+    }
+  } finally {
+    execFileSync('node', ['build.mjs'], { cwd }); // restaure un build nu
+  }
+});
+
 
