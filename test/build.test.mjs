@@ -495,6 +495,25 @@ test('goatcounter absent sans GOATCOUNTER_CODE', () => {
   }
 });
 
+test('goatcounter ignore un code invalide', () => {
+  // Un code invalide (coquille avec un guillemet) ne doit jamais produire
+  // un attribut HTML cassé : on n'émet rien plutôt que de mal former le head.
+  const cwd = new URL('..', import.meta.url).pathname;
+  try {
+    execFileSync('node', ['build.mjs'], {
+      cwd,
+      env: { ...process.env, GOATCOUNTER_CODE: 'bz"f' },
+    });
+    for (const f of ['index.html', 'en/index.html', 'es/index.html']) {
+      const html = page(f);
+      assert.ok(!html.includes('goatcounter'), `${f} : code invalide → aucune balise`);
+      assert.ok(!html.includes('data-goatcounter="https://bz'), `${f} : attribut non cassé`);
+    }
+  } finally {
+    execFileSync('node', ['build.mjs'], { cwd }); // restaure un build nu
+  }
+});
+
 test('goatcounter présent avec GOATCOUNTER_CODE, puis dist restauré', () => {
   const cwd = new URL('..', import.meta.url).pathname;
   try {

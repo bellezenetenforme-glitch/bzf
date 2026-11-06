@@ -359,7 +359,9 @@ function buildHead(lang, hero) {
   // Compteur de visites GoatCounter : injecte seulement si le code est
   // fourni (env Netlify). Build local = HTML strictement inchangé.
   const gc = (process.env.GOATCOUNTER_CODE || '').trim();
-  if (gc) {
+  // Code de sous-domaine uniquement (lettres, chiffres, - et _) : un code
+  // invalide n'émet rien plutôt que de former un attribut HTML cassé.
+  if (/^[A-Za-z0-9_-]+$/.test(gc)) {
     lines.push(`<script data-goatcounter="https://${gc}.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>`);
   }
   return lines.join('\n');
